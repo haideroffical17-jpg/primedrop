@@ -172,7 +172,15 @@
         <!-- Loading State -->
         <div id="loadingState" class="text-center py-20">
             <div class="w-10 h-10 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="text-gray-500 text-sm">Checking Live Status...</p>
+            <p class="text-gray-500 text-sm">Synchronizing with Global Database...</p>
+        </div>
+
+        <!-- Error State (If DB Fails) -->
+        <div id="errorState" class="hidden text-center py-20 bg-red-500/5 rounded-2xl border border-red-500/20 mx-4">
+            <i class="fa-solid fa-triangle-exclamation text-4xl text-red-500 mb-4"></i>
+            <h3 class="text-lg font-medium text-red-400">Connection Failed</h3>
+            <p class="text-gray-500 text-sm mt-2">Cannot connect to Live Database.</p>
+            <p class="text-gray-600 text-xs mt-1">Please check your internet or database permissions.</p>
         </div>
 
         <div id="emptyState" class="hidden flex flex-col items-center justify-center py-20 opacity-50">
@@ -316,7 +324,6 @@
         import { getFirestore, collection, addDoc, deleteDoc, doc, getDoc, getDocs, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
-        // User Provided Config (Fallback)
         const userFirebaseConfig = {
             apiKey: "AIzaSyB1ZNQzvhgWvRXSyMNX1e6tT0o7rYtvg1Y",
             authDomain: "primedrop-16d12.firebaseapp.com",
@@ -334,7 +341,6 @@
         let db, auth, products = [];
         let isUsingFirebase = false;
         
-        // Initialize Firebase
         try {
             const app = initializeApp(firebaseConfig);
             auth = getAuth(app);
@@ -349,15 +355,13 @@
                         await signInAnonymously(auth);
                     }
                 } catch (e) {
-                    console.warn("Auth Failed, continuing offline:", e.message);
-                    // Don't disable Firebase yet, wait for read fail
+                    // Fail silently for auth, try reading public anyway
+                    console.warn("Auth Init Warning:", e.message);
                 }
             };
             initAuth();
 
-            // Setup Listeners
             onAuthStateChanged(auth, (user) => {
-                // Try reading even if user is null (public rules might allow it)
                 const q = collection(db, 'artifacts', appId, 'public', 'data', 'products');
                 onSnapshot(q, (snapshot) => {
                     products = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
@@ -367,27 +371,21 @@
                         return dateB - dateA; 
                     });
                     
-                    // Success!
                     updateConnectionStatus(true);
-                    isUsingFirebase = true;
                     renderProducts(document.getElementById('searchInputDesktop').value);
                 }, (error) => {
-                    console.warn("DB Read Error, switching to Local:", error.code);
-                    isUsingFirebase = false;
-                    loadLocalData();
+                    console.warn("Live Data Error:", error.message);
+                    updateConnectionStatus(false);
+                    // Show error state instead of local storage
+                    document.getElementById('productGrid').innerHTML = "";
+                    document.getElementById('errorState').classList.remove('hidden');
+                    document.getElementById('loadingState').classList.add('hidden');
                 });
             });
-        } catch (err) {
-            console.error("Firebase Init Error:", err);
-            isUsingFirebase = false;
-            loadLocalData();
-        }
 
-        function loadLocalData() {
+        } catch (err) {
+            console.error("Critical Firebase Error:", err);
             updateConnectionStatus(false);
-            products = JSON.parse(localStorage.getItem('vipProducts')) || [];
-            document.getElementById('loadingState').classList.add('hidden');
-            renderProducts(document.getElementById('searchInputDesktop').value);
         }
 
         function updateConnectionStatus(isLive) {
@@ -396,25 +394,23 @@
             const statusDot = document.getElementById('statusDot');
             const statusText = document.getElementById('statusText');
 
-            if(isLive) {
-                // Only show if Admin (handled in updateUI logic usually, but here we can manage class directly)
-                // But wait, user requested: "Screen ke upar ek Green/Red Dot aayega jo batayega ke aap "Live" hain ya nahi."
-                // And previously asked to show only for Admin.
-                
-                statusDot.className = "w-2 h-2 rounded-full bg-green-500 animate-pulse";
-                liveStatusEl.className = liveStatusEl.className.replace('hidden', 'flex').replace('bg-red-500/10', 'bg-green-500/10').replace('border-red-500/20', 'border-green-500/20');
-                if(!currentUser || !currentUser.isAdmin) liveStatusEl.classList.add('hidden'); // Ensure hidden for non-admins
-                else liveStatusEl.classList.remove('hidden');
+            if(!currentUser || !currentUser.isAdmin) {
+                liveStatusEl.classList.add('hidden');
+                return;
+            } else {
+                liveStatusEl.classList.remove('hidden');
+            }
 
+            if(isLive) {
+                statusDot.className = "w-2 h-2 rounded-full bg-green-500 animate-pulse";
+                liveStatusEl.className = "flex items-center gap-1 bg-green-500/10 px-2 py-1 rounded-full border border-green-500/20";
                 statusText.innerText = "LIVE";
                 statusText.className = "text-[10px] text-green-400 font-bold";
+                document.getElementById('errorState').classList.add('hidden');
             } else {
                 statusDot.className = "w-2 h-2 rounded-full bg-red-500";
-                liveStatusEl.className = liveStatusEl.className.replace('hidden', 'flex').replace('bg-green-500/10', 'bg-red-500/10').replace('border-green-500/20', 'border-red-500/20');
-                if(!currentUser || !currentUser.isAdmin) liveStatusEl.classList.add('hidden');
-                else liveStatusEl.classList.remove('hidden');
-
-                statusText.innerText = "OFFLINE";
+                liveStatusEl.className = "flex items-center gap-1 bg-red-500/10 px-2 py-1 rounded-full border border-red-500/20";
+                statusText.innerText = "OFFLINE (Permission)";
                 statusText.className = "text-[10px] text-red-400 font-bold";
             }
         }
@@ -435,8 +431,7 @@
             renderCategories();
             populateAdminCategories();
             updateUI();
-            if(!isUsingFirebase) loadLocalData();
-            trackVisit(); // TRACK VISITOR ON LOAD
+            trackVisit(); 
         };
 
         // --- VISITOR TRACKING LOGIC ---
@@ -455,18 +450,9 @@
                         await setDoc(statsRef, { count: 1 });
                     }
                 } catch (e) {
-                    console.warn("Stats Write Error, using local:", e.code);
-                    updateLocalStats(today);
+                    console.warn("Stats Write Error:", e.message);
                 }
-            } else {
-                updateLocalStats(today);
             }
-        }
-
-        function updateLocalStats(today) {
-            let stats = JSON.parse(localStorage.getItem('vipStats')) || {};
-            stats[today] = (stats[today] || 0) + 1;
-            localStorage.setItem('vipStats', JSON.stringify(stats));
         }
 
         async function loadStats() {
@@ -485,40 +471,14 @@
                         if (date === today) todayCount = count;
                         if (date.startsWith(currentMonth)) monthCount += count;
                     });
-                } catch (e) { 
-                    console.warn("Stats Read Error:", e);
-                    loadLocalStats(today, currentMonth);
-                }
-            } else {
-                loadLocalStats(today, currentMonth);
-            }
-
-            setTimeout(() => {
-                const tEl = document.getElementById('statToday');
-                if(tEl) {
-                    tEl.innerText = todayCount;
-                    document.getElementById('statMonth').innerText = monthCount;
-                    document.getElementById('statTotal').innerText = totalCount;
-                }
-            }, 100);
-        }
-
-        function loadLocalStats(today, currentMonth) {
-            let todayCount = 0, monthCount = 0, totalCount = 0;
-            let stats = JSON.parse(localStorage.getItem('vipStats')) || {};
-            Object.keys(stats).forEach(date => {
-                const count = stats[date];
-                totalCount += count;
-                if (date === today) todayCount = count;
-                if (date.startsWith(currentMonth)) monthCount += count;
-            });
-            setTimeout(() => {
-                if(document.getElementById('statToday')) {
+                    
                     document.getElementById('statToday').innerText = todayCount;
                     document.getElementById('statMonth').innerText = monthCount;
                     document.getElementById('statTotal').innerText = totalCount;
+                } catch (e) { 
+                    console.warn("Stats Read Error:", e);
                 }
-            }, 100);
+            }
         }
 
         // --- Renders ---
@@ -572,6 +532,7 @@
 
             if (filtered.length === 0) {
                 emptyState.classList.remove('hidden');
+                document.getElementById('errorState').classList.add('hidden'); // Hide error if no products but connection ok
             } else {
                 emptyState.classList.add('hidden');
                 filtered.forEach(product => {
@@ -658,26 +619,13 @@
             };
 
             try {
-                if (isUsingFirebase) {
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), productData);
-                } else {
-                    productData.id = Date.now().toString();
-                    products.unshift(productData);
-                    localStorage.setItem('vipProducts', JSON.stringify(products));
-                    renderProducts();
-                    alert("Saved Locally (Sync Failed)");
-                }
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), productData);
                 closeAddModal();
                 e.target.reset();
                 tempMedia = [];
                 renderMediaPreview();
             } catch (err) {
-                alert("Upload failed completely. " + err.message);
-                // Last ditch effort: local save
-                productData.id = Date.now().toString();
-                products.unshift(productData);
-                localStorage.setItem('vipProducts', JSON.stringify(products));
-                renderProducts();
+                alert("Upload failed: Permission Denied by Database Rules.");
             } finally {
                 btn.innerHTML = `<i class="fa-solid fa-paper-plane mr-2"></i> Publish Product`;
                 btn.disabled = false;
@@ -686,20 +634,9 @@
 
         window.deleteProduct = async function(id) {
             if(!confirm("Delete item?")) return;
-            if (isUsingFirebase) {
-                try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', id));
-                } catch(e) { 
-                    alert("Sync Error. Deleting locally only.");
-                    products = products.filter(p => p.id !== id);
-                    localStorage.setItem('vipProducts', JSON.stringify(products));
-                    renderProducts();
-                }
-            } else {
-                products = products.filter(p => p.id !== id);
-                localStorage.setItem('vipProducts', JSON.stringify(products));
-                renderProducts();
-            }
+            try {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', id));
+            } catch(e) { alert("Delete failed: Permission Denied."); }
         }
 
         // --- Modals & Sliders ---
@@ -790,17 +727,17 @@
             if(!currentUser) { 
                 g.classList.remove('hidden'); 
                 a.classList.add('hidden'); 
-                if(statusIndicator) statusIndicator.classList.add('hidden'); // Hide for guests
+                if(statusIndicator) statusIndicator.classList.add('hidden'); 
             }
             else {
                 g.classList.add('hidden'); a.classList.remove('hidden'); a.classList.add('flex');
                 if(currentUser.isAdmin) {
                     a.innerHTML = `<span class="hidden lg:inline text-[10px] text-green-400 font-bold border border-green-500/20 px-2 py-1 rounded">ADMIN</span><button onclick="openAddModal()" class="btn-gold w-8 h-8 flex items-center justify-center rounded-lg shadow-lg text-black"><i class="fa-solid fa-plus"></i></button><button onclick="logoutUser()" class="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-400 border border-red-500/20"><i class="fa-solid fa-power-off"></i></button>`;
-                    if(statusIndicator) statusIndicator.classList.remove('hidden'); // Show for admin
+                    if(statusIndicator) statusIndicator.classList.remove('hidden'); 
                 }
                 else {
                     a.innerHTML = `<div class="w-8 h-8 rounded-full bg-yellow-700 flex items-center justify-center text-xs font-bold text-white">${currentUser.name[0]}</div><button onclick="logoutUser()" class="text-xs text-gray-500 hover:text-white">Logout</button>`;
-                    if(statusIndicator) statusIndicator.classList.add('hidden'); // Hide for normal users
+                    if(statusIndicator) statusIndicator.classList.add('hidden'); 
                 }
             }
             renderProducts(document.getElementById('searchInputDesktop').value);
@@ -814,7 +751,7 @@
         window.openAddModal = () => { 
             document.getElementById('addModal').classList.remove('hidden'); 
             tempMedia = []; renderMediaPreview();
-            loadStats(); // Load stats when opening admin panel
+            loadStats(); 
         };
         window.closeAddModal = () => document.getElementById('addModal').classList.add('hidden');
         window.closeViewModal = () => document.getElementById('viewModal').classList.add('hidden');
