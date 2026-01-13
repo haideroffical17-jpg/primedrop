@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrimeDrop VIP Store</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@200;300;400;500;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        vip: {
+                            dark: '#050505',
+                            card: '#0f0f0f',
+                            border: '#1f1f1f'
+                        }
+                    },
+                    backgroundImage: {
+                        'gold-text': 'linear-gradient(to right, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c)',
+                        'gold-card': 'linear-gradient(135deg, rgba(255,215,0,0.1) 0%, rgba(0,0,0,0) 100%)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { 
+            background-color: #000000; 
+            color: #ffffff; 
+            background-image: radial-gradient(circle at top center, #1a1a1a 0%, #000000 70%);
+            min-height: 100vh;
+        }
+        
+        /* Custom Gold Text */
+        .text-gold-gradient {
+            background: linear-gradient(to right, #bf953f, #e3c472, #b38728, #aa771c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        /* Glassmorphism */
+        .glass-nav {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .glass-card {
+            background: rgba(20, 20, 20, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 215, 0, 0.1);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Gold Border Glow */
+        .gold-glow:hover {
+            border-color: rgba(212, 175, 55, 0.5);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+        }
+
+        /* Gold Button Gradient */
+        .btn-gold {
+            background: linear-gradient(to bottom right, #bf953f, #aa771c);
+            color: black;
+            font-weight: 600;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+        }
+        .btn-gold:hover {
+            filter: brightness(1.1);
+        }
+
+        /* Selected Size/Category Button */
+        .selected-pill {
+            background: #bf953f !important;
+            color: black !important;
+            border-color: #bf953f !important;
+            font-weight: bold;
+        }
+
+        .size-btn.selected {
+            background: #bf953f;
+            color: black;
+            border-color: #bf953f;
+            font-weight: bold;
+        }
+
+        /* Hide Scrollbar */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+
+        /* Animations */
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        .modal-animate { animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        
+        /* Floating Labels for Inputs */
+        .input-group input:focus ~ label,
+        .input-group input:not(:placeholder-shown) ~ label,
+        .input-group textarea:focus ~ label,
+        .input-group textarea:not(:placeholder-shown) ~ label,
+        .input-group select:focus ~ label,
+        .input-group select:not(:placeholder-shown) ~ label {
+            top: -8px;
+            font-size: 10px;
+            color: #bf953f;
+            background: #000;
+            padding: 0 4px;
+        }
+    </style>
+</head>
+<body class="flex flex-col font-sans pb-20 md:pb-0">
+
+    <!-- Navbar -->
+    <nav class="fixed top-0 w-full z-50 glass-nav">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 md:h-20">
+                <!-- Logo -->
+                <div class="flex items-center gap-2 cursor-pointer" onclick="window.scrollTo(0,0)">
+                    <div class="w-8 h-8 md:w-10 md:h-10 rounded-full btn-gold flex items-center justify-center shadow-lg shadow-yellow-900/40">
+                        <i class="fa-solid fa-crown text-sm md:text-lg"></i>
+                    </div>
+                    <div class="leading-tight">
+                        <h1 class="text-xl md:text-2xl tracking-tighter text-white font-light">PRIME<span class="text-gold-gradient font-bold">DROP</span></h1>
+                    </div>
+                </div>
+
+                <!-- Desktop Center Search -->
+                <div class="hidden md:flex items-center bg-white/5 rounded-full px-4 py-2 border border-white/10 focus-within:border-yellow-600/50 transition-colors w-96">
+                    <i class="fa-solid fa-search text-gray-500"></i>
+                    <input type="text" id="searchInputDesktop" placeholder="Search exclusive items..." class="bg-transparent border-none outline-none text-sm ml-3 w-full text-white placeholder-gray-600" onkeyup="filterProducts(this.value)">
+                </div>
+
+                <!-- Right Side Controls -->
+                <div class="flex items-center gap-4">
+                    <div class="hidden sm:block text-xs font-bold text-gray-500 tracking-wider">USD ($)</div>
+
+                    <!-- User Actions -->
+                    <div id="guestControls" class="flex items-center gap-3">
+                        <button onclick="openLoginModal()" class="hidden md:block text-sm text-gray-400 hover:text-white transition">Login</button>
+                        <button onclick="openSignupModal()" class="btn-gold px-5 py-1.5 rounded-full text-xs md:text-sm shadow-lg shadow-yellow-500/10 hover:shadow-yellow-500/30 transition-all transform hover:-translate-y-0.5">
+                            JOIN VIP
+                        </button>
+                    </div>
+
+                    <!-- Admin/User Controls (Injected via JS) -->
+                    <div id="authControls" class="hidden flex items-center gap-3"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Search Bar -->
+    <div class="md:hidden pt-20 px-4 pb-2">
+        <div class="flex items-center bg-[#111] rounded-xl px-4 py-3 border border-white/5 focus-within:border-yellow-600/50">
+            <i class="fa-solid fa-search text-gray-500"></i>
+            <input type="text" id="searchInputMobile" placeholder="Search..." class="bg-transparent border-none outline-none text-sm ml-3 w-full text-white placeholder-gray-600" onkeyup="filterProducts(this.value)">
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <div class="pt-4 md:pt-28 pb-6 px-4">
+        <div class="max-w-7xl mx-auto rounded-[2rem] overflow-hidden relative min-h-[220px] md:h-80 bg-[#111] border border-white/5 flex items-center shadow-2xl group">
+            <div class="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1550953936-a60d03b0c960?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center transition-transform duration-1000 group-hover:scale-105"></div>
+            <div class="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent"></div>
+            <div class="relative z-10 px-6 md:px-16 w-full">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-yellow-500/30 bg-yellow-500/10 backdrop-blur-md mb-4">
+                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <span class="text-[10px] md:text-xs font-bold text-yellow-500 tracking-widest uppercase">New Drops Live</span>
+                </div>
+                <h2 class="text-3xl md:text-6xl font-extrabold text-white mb-2 tracking-tight">LUXURY <br class="md:hidden"> <span class="text-gold-gradient">REDEFINED</span></h2>
+                <button onclick="document.getElementById('categoryContainer').scrollIntoView({behavior: 'smooth'})" class="text-white text-xs md:text-sm border-b border-yellow-500 pb-1 hover:text-yellow-400 transition-colors">
+                    Explore Categories <i class="fa-solid fa-arrow-down ml-1 text-[10px]"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CATEGORIES SCROLLABLE LIST -->
+    <div id="categoryContainer" class="max-w-7xl mx-auto px-4 mb-8 overflow-x-auto hide-scrollbar">
+        <div id="categoriesList" class="flex gap-3 whitespace-nowrap pb-2">
+            <!-- Injected via JS -->
+        </div>
+    </div>
+
+    <!-- Product Grid -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 w-full">
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg md:text-2xl font-light text-white"><span id="currentCategoryTitle" class="font-bold text-white">All Products</span></h3>
+        </div>
+
+        <div id="emptyState" class="hidden flex flex-col items-center justify-center py-20 opacity-50">
+            <i class="fa-solid fa-crown text-4xl text-gray-600 mb-4"></i>
+            <h3 class="text-lg font-medium text-gray-300">No items found</h3>
+            <p class="text-gray-600 text-sm">Try a different category.</p>
+        </div>
+
+        <div id="productGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+            <!-- Products injected via JS -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="mt-20 border-t border-white/5 bg-black py-10 pb-24 md:pb-10">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <div class="flex justify-center items-center gap-2 mb-4 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
+                <i class="fa-solid fa-crown text-yellow-600"></i>
+                <span class="text-sm font-bold tracking-widest text-gray-400">PRIMEDROP</span>
+            </div>
+            <p class="text-gray-600 text-xs">&copy; 2026 PrimeDrop VIP.</p>
+        </div>
+    </footer>
+
+    <!-- MOBILE NAV -->
+    <div class="md:hidden fixed bottom-0 w-full z-50 glass-nav border-t border-white/5 pb-safe">
+        <div class="flex justify-around items-center h-16 px-2">
+            <button onclick="window.scrollTo(0,0)" class="flex flex-col items-center justify-center w-full h-full text-yellow-500">
+                <i class="fa-solid fa-house text-lg mb-1"></i>
+                <span class="text-[10px]">Home</span>
+            </button>
+            <button onclick="document.getElementById('searchInputMobile').focus()" class="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-white transition">
+                <i class="fa-solid fa-search text-lg mb-1"></i>
+                <span class="text-[10px]">Search</span>
+            </button>
+            <button onclick="handleProfileClick()" class="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-white transition">
+                <div class="relative">
+                    <i class="fa-regular fa-user text-lg mb-1"></i>
+                    <span id="navDot" class="hidden absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                </div>
+                <span class="text-[10px]">Account</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+
+    <!-- LOGIN MODAL -->
+    <div id="loginModal" class="fixed inset-0 z-[60] hidden bg-black/95 backdrop-blur-md flex items-end md:items-center justify-center sm:p-4">
+        <div class="bg-[#111] w-full md:w-[400px] rounded-t-3xl md:rounded-3xl border border-white/10 p-8 modal-animate shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-20 -right-20 w-40 h-40 bg-yellow-500/20 blur-3xl rounded-full pointer-events-none"></div>
+            <button onclick="closeLoginModal()" class="absolute top-6 right-6 text-gray-500 hover:text-white"><i class="fa-solid fa-times text-lg"></i></button>
+            <div class="mb-8"><h2 class="text-3xl font-bold text-white mb-2">Welcome Back</h2><p class="text-gray-500 text-sm">Enter your VIP credentials.</p></div>
+            <form onsubmit="handleLogin(event)" class="space-y-6">
+                <div class="input-group relative">
+                    <input type="email" id="loginEmail" required class="w-full bg-transparent border border-gray-700 rounded-lg px-4 py-3.5 text-sm text-white focus:border-yellow-500 outline-none transition-colors peer" placeholder=" ">
+                    <label class="absolute left-4 top-3.5 text-gray-500 text-sm transition-all px-1 pointer-events-none">Email Address</label>
+                </div>
+                <div class="input-group relative">
+                    <input type="password" id="loginPass" required class="w-full bg-transparent border border-gray-700 rounded-lg pl-4 pr-10 py-3.5 text-sm text-white focus:border-yellow-500 outline-none transition-colors peer" placeholder=" ">
+                    <label class="absolute left-4 top-3.5 text-gray-500 text-sm transition-all px-1 pointer-events-none">Password</label>
+                </div>
+                <p id="loginError" class="text-red-500 text-xs text-center hidden bg-red-500/10 py-2 rounded border border-red-500/20">Invalid credentials</p>
+                <button type="submit" class="w-full btn-gold py-4 rounded-xl text-sm font-bold shadow-xl shadow-yellow-900/20 tracking-wide uppercase">Access Account</button>
+            </form>
+            <div class="mt-8 text-center"><button onclick="switchToSignup()" class="text-gray-500 text-xs hover:text-white transition">Not a member? <span class="text-yellow-500 font-bold ml-1">Apply Now</span></button></div>
+        </div>
+    </div>
+
+    <!-- SIGN UP MODAL -->
+    <div id="signupModal" class="fixed inset-0 z-[60] hidden bg-black/95 backdrop-blur-md flex items-end md:items-center justify-center sm:p-4">
+        <div class="bg-[#111] w-full md:w-[400px] rounded-t-3xl md:rounded-3xl border border-white/10 p-8 modal-animate shadow-2xl relative overflow-hidden">
+            <button onclick="closeSignupModal()" class="absolute top-6 right-6 text-gray-500 hover:text-white"><i class="fa-solid fa-times text-lg"></i></button>
+            <div class="mb-8"><h2 class="text-2xl font-bold text-white mb-2">Join The List</h2><p class="text-gray-500 text-sm">Create your exclusive account.</p></div>
+            <form onsubmit="handleSignup(event)" class="space-y-5">
+                <div class="input-group relative">
+                    <input type="text" id="signupName" required class="w-full bg-transparent border border-gray-700 rounded-lg px-4 py-3.5 text-sm text-white focus:border-yellow-500 outline-none transition-colors peer" placeholder=" ">
+                    <label class="absolute left-4 top-3.5 text-gray-500 text-sm transition-all px-1 pointer-events-none">Full Name</label>
+                </div>
+                <div class="input-group relative">
+                    <input type="email" id="signupEmail" required class="w-full bg-transparent border border-gray-700 rounded-lg px-4 py-3.5 text-sm text-white focus:border-yellow-500 outline-none transition-colors peer" placeholder=" ">
+                    <label class="absolute left-4 top-3.5 text-gray-500 text-sm transition-all px-1 pointer-events-none">Email Address</label>
+                </div>
+                <div class="input-group relative">
+                    <input type="password" id="signupPass" required class="w-full bg-transparent border border-gray-700 rounded-lg pl-4 pr-10 py-3.5 text-sm text-white focus:border-yellow-500 outline-none transition-colors peer" placeholder=" ">
+                    <label class="absolute left-4 top-3.5 text-gray-500 text-sm transition-all px-1 pointer-events-none">Create Password</label>
+                </div>
+                <button type="submit" class="w-full btn-gold py-4 rounded-xl text-sm font-bold shadow-xl shadow-yellow-900/20 tracking-wide uppercase">Create Account</button>
+            </form>
+            <div class="mt-6 text-center"><button onclick="switchToLogin()" class="text-gray-500 text-xs hover:text-white transition">Already a member? <span class="text-yellow-500 font-bold ml-1">Login</span></button></div>
+        </div>
+    </div>
+
+    <!-- ADD PRODUCT MODAL (Admin) -->
+    <div id="addModal" class="fixed inset-0 z-[60] hidden bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-[#111] w-full max-w-lg rounded-2xl border border-white/10 p-6 modal-animate shadow-2xl h-full md:h-auto overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-white"><span class="text-gold-gradient">Admin</span> Dashboard</h2>
+                <button onclick="closeAddModal()" class="text-gray-500 hover:text-white"><i class="fa-solid fa-times"></i></button>
+            </div>
+            
+            <form onsubmit="handleFormSubmit(event)" class="space-y-4">
+                
+                <!-- 1. CATEGORY SELECTOR -->
+                <div class="input-group relative mt-2">
+                    <select id="pCategory" required class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer appearance-none">
+                        <!-- Options injected via JS -->
+                    </select>
+                    <label class="absolute left-4 top-3.5 text-gray-500 text-sm transition-all px-1 pointer-events-none">Category</label>
+                    <i class="fa-solid fa-chevron-down absolute right-4 top-4 text-gray-500 text-xs pointer-events-none"></i>
+                </div>
+
+                <div class="input-group relative">
+                    <input type="text" id="pTitle" required class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" ">
+                    <label class="absolute left-4 top-3.5 text-gray-500 text-sm transition-all px-1 pointer-events-none">Product Title</label>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="input-group relative">
+                        <input type="number" step="0.01" id="pPrice" required class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" ">
+                        <label class="absolute left-4 top-3.5 text-gray-500 text-sm transition-all px-1 pointer-events-none">Price (USD)</label>
+                    </div>
+                    <div class="input-group relative">
+                        <input type="number" step="0.01" id="pOldPrice" class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" ">
+                        <label class="absolute left-4 top-3.5 text-gray-500 text-sm transition-all px-1 pointer-events-none">Old Price (USD)</label>
+                    </div>
+                </div>
+
+                <div class="input-group relative">
+                    <input type="text" id="pSizes" class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" ">
+                    <label class="absolute left-4 top-3.5 text-gray-500 text-sm transition-all px-1 pointer-events-none">Sizes (e.g., S, M, L)</label>
+                </div>
+
+                <!-- 2. VIDEO UPLOAD -->
+                <div class="border-2 border-dashed border-white/10 rounded-xl p-3 text-center hover:border-yellow-500/50 transition cursor-pointer relative">
+                    <input type="file" id="pVideoInput" accept="video/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleVideoUpload(this)">
+                    <div id="videoPlaceholder">
+                        <i class="fa-solid fa-video text-xl text-gray-500 mb-1"></i>
+                        <p class="text-[10px] text-gray-400">Upload Video (Max 5MB)</p>
+                    </div>
+                    <p id="videoSuccess" class="hidden text-xs text-green-500 font-bold"><i class="fa-solid fa-check"></i> Video Attached</p>
+                    <input type="hidden" id="pVideoBase64">
+                </div>
+
+                <!-- IMAGE UPLOAD -->
+                <div class="border-2 border-dashed border-white/10 rounded-xl p-3 text-center hover:border-yellow-500/50 transition cursor-pointer relative">
+                    <input type="file" id="pImageInput" accept="image/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="handleImageUpload(this)">
+                    <div id="uploadPlaceholder">
+                        <i class="fa-solid fa-image text-xl text-gray-500 mb-1"></i>
+                        <p class="text-[10px] text-gray-400">Upload Image</p>
+                    </div>
+                    <img id="imagePreview" src="" class="hidden h-20 mx-auto rounded object-contain">
+                    <input type="hidden" id="pImageBase64">
+                </div>
+
+                <div class="input-group relative">
+                    <input type="url" id="pLink" required class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" ">
+                    <label class="absolute left-4 top-3.5 text-gray-500 text-sm transition-all px-1 pointer-events-none">Affiliate Link</label>
+                </div>
+                
+                <div class="input-group relative">
+                    <textarea id="pDesc" rows="2" class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" "></textarea>
+                    <label class="absolute left-4 top-3.5 text-gray-500 text-sm transition-all px-1 pointer-events-none">Description</label>
+                </div>
+
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-green-900/20">
+                    Publish Item
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- VIEW PRODUCT MODAL -->
+    <div id="viewModal" class="fixed inset-0 z-[70] hidden bg-black/98 backdrop-blur-xl flex items-center justify-center p-0 md:p-4">
+        <div class="bg-[#050505] w-full md:max-w-4xl h-full md:h-auto md:rounded-3xl border-0 md:border border-white/10 overflow-hidden modal-animate flex flex-col md:flex-row relative">
+            <button onclick="closeViewModal()" class="absolute top-4 right-4 z-20 w-10 h-10 bg-black/50 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-white/20 transition"><i class="fa-solid fa-times"></i></button>
+            
+            <div class="w-full md:w-1/2 h-[40vh] md:h-auto bg-[#111] flex items-center justify-center p-6 relative group">
+                <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent"></div>
+                <img id="mImage" src="" alt="Product" class="max-h-full max-w-full object-contain drop-shadow-2xl z-10 transition-transform duration-500 group-hover:scale-105">
+                
+                <!-- Video Player Container (Hidden by default) -->
+                <div id="mVideoContainer" class="hidden absolute inset-0 z-30 bg-black flex items-center justify-center">
+                    <video id="mVideoPlayer" controls class="w-full h-full object-contain"></video>
+                    <button onclick="closeVideo()" class="absolute top-4 right-4 text-white bg-black/50 rounded-full w-8 h-8"><i class="fa-solid fa-times"></i></button>
+                </div>
+
+                <!-- Watch Video Button -->
+                <button id="mVideoBtn" onclick="playVideo()" class="hidden absolute bottom-6 right-6 z-20 bg-red-600 text-white px-4 py-2 rounded-full text-xs font-bold hover:bg-red-500 transition shadow-lg shadow-red-900/30 flex items-center gap-2">
+                    <i class="fa-solid fa-play"></i> Watch Video
+                </button>
+            </div>
+
+            <div class="w-full md:w-1/2 p-6 md:p-10 flex flex-col h-full overflow-y-auto">
+                <div class="mb-auto">
+                    <div class="flex flex-wrap items-center gap-2 mb-4">
+                        <span id="mCategoryBadge" class="bg-white/10 text-gray-300 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">Category</span>
+                        <div class="flex text-yellow-600 text-xs gap-0.5"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></div>
+                    </div>
+                    <h2 id="mTitle" class="text-2xl md:text-3xl font-light text-white mb-2 leading-tight"></h2>
+                    <div class="flex items-baseline gap-3 mb-4">
+                        <span id="mPrice" class="text-3xl font-bold text-gold-gradient"></span>
+                        <span id="mOldPrice" class="text-sm text-gray-600 line-through"></span>
+                    </div>
+                    <div id="mSizesContainer" class="hidden mb-6">
+                        <p class="text-xs text-gray-500 uppercase tracking-widest mb-2">Select Size</p>
+                        <div id="mSizesList" class="flex flex-wrap gap-2"></div>
+                    </div>
+                    <div class="w-full h-px bg-white/10 mb-6"></div>
+                    <p id="mDesc" class="text-gray-400 text-sm leading-relaxed mb-8 font-light"></p>
+                </div>
+                <a id="mLink" href="#" target="_blank" class="w-full btn-gold text-black font-bold text-base py-4 rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-2xl shadow-yellow-500/10">
+                    <span>Purchase Now</span> <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CATEGORIES DATA ---
+        const CATEGORIES = [
+            "Home Appliances", "Computer & Office", "Home Improvement", "Home & Garden",
+            "Sports & Entertainment", "Office & School Supplies", "Toys & Hobbies",
+            "Security & Protection", "Automobiles, Parts & Accessories", "Jewelry & Accessories",
+            "Lights & Lighting", "Consumer Electronics", "Beauty & Health", "Weddings & Events",
+            "Shoes", "Electronic Components & Supplies", "Phones & Telecommunications", "Tools",
+            "Mother & Kids", "Furniture", "Watches", "Luggage & Bags", "Underwear",
+            "Virtual Products", "Industrial & Business", "Sports Shoes,Clothing&Accessories",
+            "Phones & Telecommunications Accessories", "Women's Clothing", "Men's Clothing",
+            "Apparel Accessories", "Hair Extensions & Wigs", "Special Category",
+            "Books & Cultural Merchandise", "Novelty & Special Use", "Motorcycle Equipments & Parts"
+        ];
+
+        // --- GLOBAL VARIABLES ---
+        let products = JSON.parse(localStorage.getItem('vipProducts')) || [];
+        let currentCategory = "All";
+        const ADMIN_EMAIL = "Haideroffical16@gmail.com";
+        const ADMIN_PASS = "HaiderAli000";
+        let currentUser = null;
+
+        // --- INIT ---
+        window.onload = function() {
+            renderCategories();
+            populateAdminCategories();
+            updateUI(); // renders products
+        };
+
+        // --- CATEGORY LOGIC ---
+        function renderCategories() {
+            const list = document.getElementById('categoriesList');
+            // 'All Categories' Button
+            let html = `<button onclick="filterByCategory('All')" id="cat-All" class="selected-pill bg-white/10 text-white px-5 py-2 rounded-full text-xs font-medium border border-white/10 hover:bg-white/20 transition">All Categories</button>`;
+            
+            CATEGORIES.forEach(cat => {
+                // Remove spaces for ID
+                const id = cat.replace(/\s+/g, '');
+                // Escape single quotes for HTML attribute
+                const safeCat = cat.replace(/'/g, "\\'");
+                html += `<button onclick="filterByCategory('${safeCat}')" id="cat-${id}" class="bg-black/50 text-gray-400 px-5 py-2 rounded-full text-xs font-medium border border-white/5 hover:text-white hover:border-white/20 transition">${cat}</button>`;
+            });
+            list.innerHTML = html;
+        }
+
+        function populateAdminCategories() {
+            const select = document.getElementById('pCategory');
+            select.innerHTML = `<option value="" disabled selected>Select Category...</option>`;
+            CATEGORIES.forEach(cat => {
+                select.innerHTML += `<option value="${cat}">${cat}</option>`;
+            });
+        }
+
+        function filterByCategory(cat) {
+            currentCategory = cat;
+            
+            // Update UI visuals
+            const buttons = document.querySelectorAll('#categoriesList button');
+            buttons.forEach(btn => {
+                btn.classList.remove('selected-pill');
+                btn.classList.remove('text-black');
+                btn.classList.add('text-gray-400', 'bg-black/50');
+            });
+
+            // Highlight selected
+            const safeId = cat === 'All' ? 'All' : cat.replace(/\s+/g, '');
+            const selectedBtn = document.getElementById(`cat-${safeId}`);
+            if(selectedBtn) {
+                selectedBtn.classList.add('selected-pill');
+                selectedBtn.classList.remove('text-gray-400', 'bg-black/50');
+            }
+
+            document.getElementById('currentCategoryTitle').innerText = cat === 'All' ? 'All Products' : cat;
+            renderProducts(document.getElementById('searchInputDesktop').value);
+        }
+
+        // --- PRODUCT RENDER LOGIC ---
+        function renderProducts(filterText = "") {
+            const grid = document.getElementById('productGrid');
+            const emptyState = document.getElementById('emptyState');
+            grid.innerHTML = "";
+
+            // --- SMART SEARCH UPDATE STARTS HERE ---
+            const searchTerms = filterText.toLowerCase().split(/\s+/).filter(t => t.length > 0);
+
+            let filtered = products.filter(p => {
+                const titleLower = p.title.toLowerCase();
+                const descLower = (p.description || "").toLowerCase();
+                const catLower = (p.category || "").toLowerCase();
+
+                if (searchTerms.length === 0) return true;
+
+                // Check if ALL search keywords match either Title OR Description OR Category
+                return searchTerms.every(term => 
+                    titleLower.includes(term) || 
+                    descLower.includes(term) ||
+                    catLower.includes(term)
+                );
+            });
+            // --- SMART SEARCH UPDATE ENDS HERE ---
+
+            // Filter by Category
+            if (currentCategory !== "All") {
+                filtered = filtered.filter(p => p.category === currentCategory);
+            }
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                filtered.forEach(product => {
+                    const deleteBtn = (currentUser && currentUser.isAdmin) ? 
+                        `<button onclick="deleteProduct(${product.id}, event)" class="absolute top-3 right-3 bg-red-500/90 text-white w-8 h-8 rounded-full shadow-lg hover:bg-red-600 z-20 flex items-center justify-center transition-all"><i class="fa-solid fa-trash text-xs"></i></button>` 
+                        : '';
+                    
+                    const price = "$" + parseFloat(product.price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                    const card = `
+                        <div class="glass-card rounded-2xl overflow-hidden relative group cursor-pointer gold-glow transition-all duration-300" onclick="openViewModal(${product.id})">
+                            ${deleteBtn}
+                            <div class="relative aspect-[4/5] bg-[#0a0a0a] overflow-hidden p-6 flex items-center justify-center">
+                                <img src="${product.image}" alt="${product.title}" class="w-full h-full object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500 filter drop-shadow-xl">
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                                    <span class="bg-white/10 backdrop-blur text-white px-4 py-2 rounded-full text-xs font-medium border border-white/20">View Details</span>
+                                </div>
+                            </div>
+                            <div class="p-4 bg-gradient-to-b from-[#151515] to-[#0f0f0f]">
+                                <div class="text-[10px] text-gray-500 uppercase tracking-wide mb-1 truncate">${product.category || 'General'}</div>
+                                <h3 class="text-gray-300 font-light text-xs md:text-sm line-clamp-1 mb-1">${product.title}</h3>
+                                <div class="flex items-center justify-between">
+                                    <p class="text-gold-gradient font-bold text-sm md:text-lg">${price}</p>
+                                    <button class="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-gray-400 group-hover:bg-yellow-500 group-hover:text-black transition-colors">
+                                        <i class="fa-solid fa-plus text-[10px]"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    grid.innerHTML += card;
+                });
+            }
+        }
+
+        function filterProducts(val) { renderProducts(val); }
+
+        // --- VIDEO UPLOAD LOGIC ---
+        function handleVideoUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                if (file.size > 5 * 1024 * 1024) { // 5MB Limit
+                    alert("Video too large! Please upload under 5MB.");
+                    input.value = ""; // clear
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('pVideoBase64').value = e.target.result;
+                    document.getElementById('videoPlaceholder').classList.add('hidden');
+                    document.getElementById('videoSuccess').classList.remove('hidden');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // --- IMAGE UPLOAD LOGIC ---
+        function handleImageUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = function() {
+                        // Compress Image
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const maxWidth = 500;
+                        const scaleSize = maxWidth / img.width;
+                        canvas.width = maxWidth;
+                        canvas.height = img.height * scaleSize;
+                        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                        const compressed = canvas.toDataURL('image/jpeg', 0.8);
+
+                        document.getElementById('pImageBase64').value = compressed;
+                        document.getElementById('imagePreview').src = compressed;
+                        document.getElementById('imagePreview').classList.remove('hidden');
+                        document.getElementById('uploadPlaceholder').classList.add('hidden');
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // --- FORM SUBMIT ---
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const imageBase64 = document.getElementById('pImageBase64').value;
+            const finalImage = imageBase64 || "https://placehold.co/400x500/111/gold?text=No+Image";
+            const videoBase64 = document.getElementById('pVideoBase64').value; // Base64 Video
+
+            const sizeStr = document.getElementById('pSizes').value.trim();
+            const sizesArr = sizeStr ? sizeStr.split(',').map(s => s.trim()).filter(s => s) : [];
+
+            const newProduct = {
+                id: Date.now(), 
+                title: document.getElementById('pTitle').value,
+                category: document.getElementById('pCategory').value,
+                price: document.getElementById('pPrice').value,
+                oldPrice: document.getElementById('pOldPrice').value,
+                image: finalImage, 
+                sizes: sizesArr,
+                video: videoBase64, // Stored Video
+                link: document.getElementById('pLink').value,
+                description: document.getElementById('pDesc').value
+            };
+
+            try {
+                products.unshift(newProduct); 
+                localStorage.setItem('vipProducts', JSON.stringify(products));
+                renderProducts();
+                closeAddModal();
+                e.target.reset();
+                // Reset UI
+                document.getElementById('imagePreview').classList.add('hidden');
+                document.getElementById('uploadPlaceholder').classList.remove('hidden');
+                document.getElementById('videoPlaceholder').classList.remove('hidden');
+                document.getElementById('videoSuccess').classList.add('hidden');
+                document.getElementById('pImageBase64').value = "";
+                document.getElementById('pVideoBase64').value = "";
+            } catch(err) {
+                alert("Storage Full! Video/Image too large. Please delete items or use smaller files.");
+                products.shift(); // Undo add
+            }
+        }
+
+        // --- VIEW MODAL ---
+        function openViewModal(id) {
+            const product = products.find(p => p.id === id);
+            if(!product) return;
+
+            document.getElementById('mImage').src = product.image;
+            document.getElementById('mTitle').innerText = product.title;
+            document.getElementById('mCategoryBadge').innerText = product.category || 'General';
+            document.getElementById('mPrice').innerText = "$" + parseFloat(product.price).toLocaleString('en-US', {minimumFractionDigits:2});
+            document.getElementById('mOldPrice').innerText = "$" + parseFloat(product.oldPrice).toLocaleString('en-US', {minimumFractionDigits:2});
+            document.getElementById('mDesc').innerText = product.description;
+            document.getElementById('mLink').href = product.link;
+
+            // Sizes
+            const sizesContainer = document.getElementById('mSizesContainer');
+            const sizesList = document.getElementById('mSizesList');
+            sizesList.innerHTML = ''; 
+            if(product.sizes && product.sizes.length > 0) {
+                sizesContainer.classList.remove('hidden');
+                product.sizes.forEach(size => {
+                    sizesList.innerHTML += `<button onclick="selectSize(this)" class="size-btn w-10 h-10 rounded border border-white/20 text-gray-400 text-sm hover:border-yellow-500 hover:text-white transition">${size}</button>`;
+                });
+            } else {
+                sizesContainer.classList.add('hidden');
+            }
+
+            // Video
+            const vidBtn = document.getElementById('mVideoBtn');
+            const videoPlayer = document.getElementById('mVideoPlayer');
+            
+            if(product.video) {
+                vidBtn.classList.remove('hidden');
+                videoPlayer.src = product.video;
+            } else {
+                vidBtn.classList.add('hidden');
+                videoPlayer.src = "";
+            }
+            
+            closeVideo(); // Ensure player is hidden initially
+            document.getElementById('viewModal').classList.remove('hidden');
+        }
+
+        function selectSize(btn) {
+            document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+        }
+
+        function playVideo() {
+            document.getElementById('mVideoContainer').classList.remove('hidden');
+            document.getElementById('mVideoPlayer').play();
+        }
+        function closeVideo() {
+            const container = document.getElementById('mVideoContainer');
+            const player = document.getElementById('mVideoPlayer');
+            player.pause();
+            container.classList.add('hidden');
+        }
+        
+        function closeViewModal() {
+            closeVideo();
+            document.getElementById('viewModal').classList.add('hidden');
+        }
+
+        // --- AUTH & OTHER UTILS ---
+        function updateUI() {
+            const guestControls = document.getElementById('guestControls');
+            const authControls = document.getElementById('authControls');
+            authControls.innerHTML = '';
+            if (!currentUser) {
+                guestControls.classList.remove('hidden');
+                authControls.classList.add('hidden');
+            } else {
+                guestControls.classList.add('hidden');
+                authControls.classList.remove('hidden');
+                authControls.classList.add('flex');
+                if (currentUser.isAdmin) {
+                    authControls.innerHTML = `<span class="hidden lg:inline text-[10px] text-green-400 font-bold bg-green-900/20 px-2 py-1 rounded">Admin</span><button onclick="openAddModal()" class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white"><i class="fa-solid fa-plus"></i></button><button onclick="logoutUser()" class="w-9 h-9 rounded-full bg-red-500/10 flex items-center justify-center text-red-400"><i class="fa-solid fa-power-off"></i></button>`;
+                } else {
+                    authControls.innerHTML = `<div class="w-8 h-8 rounded-full bg-yellow-700 flex items-center justify-center text-xs font-bold text-white">${currentUser.name.charAt(0)}</div><button onclick="logoutUser()" class="text-xs text-gray-500 hover:text-white">Logout</button>`;
+                }
+            }
+            renderProducts(document.getElementById('searchInputDesktop').value);
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const pass = document.getElementById('loginPass').value.trim();
+            if (email.toLowerCase() === ADMIN_EMAIL.toLowerCase() && pass === ADMIN_PASS) {
+                currentUser = { name: "Admin", email: ADMIN_EMAIL, isAdmin: true };
+                document.getElementById('loginError').classList.add('hidden');
+                closeLoginModal();
+                updateUI();
+                return;
+            }
+            const localUsers = JSON.parse(localStorage.getItem('vipUsers')) || [];
+            const foundUser = localUsers.find(u => u.email.toLowerCase() === email.toLowerCase() && u.pass === pass);
+            if (foundUser) {
+                currentUser = { name: foundUser.name, email: foundUser.email, isAdmin: false };
+                document.getElementById('loginError').classList.add('hidden');
+                closeLoginModal();
+                updateUI();
+            } else {
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        }
+        
+        // Revised Expanded Functions
+        function handleSignup(e) {
+            e.preventDefault();
+            const name = document.getElementById("signupName").value.trim();
+            const email = document.getElementById("signupEmail").value.trim();
+            const pass = document.getElementById("signupPass").value.trim();
+            
+            let localUsers = JSON.parse(localStorage.getItem("vipUsers")) || [];
+            
+            if (localUsers.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+                alert("Account exists. Please login.");
+                return;
+            }
+            
+            localUsers.push({name: name, email: email, pass: pass});
+            localStorage.setItem("vipUsers", JSON.stringify(localUsers));
+            
+            currentUser = {name: name, email: email, isAdmin: false};
+            closeSignupModal();
+            updateUI();
+        }
+
+        function logoutUser() {
+            currentUser = null;
+            updateUI();
+        }
+
+        function handleProfileClick() {
+            if (currentUser) {
+                if (currentUser.isAdmin) {
+                    openAddModal();
+                } else {
+                    alert("Logged in as " + currentUser.name);
+                }
+            } else {
+                openLoginModal();
+            }
+        }
+
+        function deleteProduct(id, event) {
+            event.stopPropagation();
+            if (confirm("Delete this VIP item?")) {
+                products = products.filter(p => p.id !== id);
+                localStorage.setItem("vipProducts", JSON.stringify(products));
+                renderProducts();
+            }
+        }
+        
+        function openLoginModal(){document.getElementById("loginModal").classList.remove("hidden")}
+        function closeLoginModal(){document.getElementById("loginModal").classList.add("hidden")}
+        function openSignupModal(){document.getElementById("signupModal").classList.remove("hidden")}
+        function closeSignupModal(){document.getElementById("signupModal").classList.add("hidden")}
+        function openAddModal(){document.getElementById("addModal").classList.remove("hidden")}
+        function closeAddModal(){document.getElementById("addModal").classList.add("hidden")}
+        
+        function switchToSignup(){closeLoginModal();openSignupModal()}
+        function switchToLogin(){closeSignupModal();openLoginModal()}
+        
+        function togglePass(inputId, iconId){
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if(input.type === "password"){
+                input.type = "text";
+                icon.classList.remove("fa-eye");
+                icon.classList.add("fa-eye-slash");
+            } else {
+                input.type = "password";
+                icon.classList.remove("fa-eye-slash");
+                icon.classList.add("fa-eye");
+            }
+        }
+
+        window.onclick = function(e){
+            const ids = ["viewModal","addModal","loginModal","signupModal"];
+            ids.forEach(id => {
+                if(e.target.id === id) document.getElementById(id).classList.add('hidden');
+            });
+        };
+    </script>
+</body>
+</html>
