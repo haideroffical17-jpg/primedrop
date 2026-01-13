@@ -117,6 +117,13 @@
                 </div>
                 <div class="flex items-center gap-4">
                     <div class="hidden sm:block text-xs font-bold text-gray-500 tracking-wider">USD ($)</div>
+                    
+                    <!-- Live Status Indicator (Hidden by default) -->
+                    <div id="liveStatus" class="hidden items-center gap-1 bg-red-500/10 px-2 py-1 rounded-full border border-red-500/20" title="Connection Status">
+                        <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse" id="statusDot"></div>
+                        <span class="text-[10px] text-red-400 font-bold" id="statusText">CONNECTING</span>
+                    </div>
+
                     <div id="guestControls" class="flex items-center gap-3">
                         <button onclick="openLoginModal()" class="hidden md:block text-sm text-gray-400 hover:text-white transition">Login</button>
                         <button onclick="openSignupModal()" class="btn-gold px-5 py-1.5 rounded-full text-xs md:text-sm shadow-lg shadow-yellow-500/10 hover:shadow-yellow-500/30 transition-all transform hover:-translate-y-0.5">JOIN VIP</button>
@@ -143,7 +150,7 @@
             <div class="relative z-10 px-6 md:px-16 w-full">
                 <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-yellow-500/30 bg-yellow-500/10 backdrop-blur-md mb-4">
                     <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    <span class="text-[10px] md:text-xs font-bold text-yellow-500 tracking-widest uppercase">Live Updates</span>
+                    <span class="text-[10px] md:text-xs font-bold text-yellow-500 tracking-widest uppercase">New Drops Live</span>
                 </div>
                 <h2 class="text-3xl md:text-6xl font-extrabold text-white mb-2 tracking-tight">LUXURY <br class="md:hidden"> <span class="text-gold-gradient">REDEFINED</span></h2>
                 <button onclick="document.getElementById('categoryContainer').scrollIntoView({behavior: 'smooth'})" class="text-white text-xs md:text-sm border-b border-yellow-500 pb-1 hover:text-yellow-400 transition-colors">Explore Categories <i class="fa-solid fa-arrow-down ml-1 text-[10px]"></i></button>
@@ -165,7 +172,7 @@
         <!-- Loading State -->
         <div id="loadingState" class="text-center py-20">
             <div class="w-10 h-10 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="text-gray-500 text-sm">Connecting to Live Server...</p>
+            <p class="text-gray-500 text-sm">Checking Live Status...</p>
         </div>
 
         <div id="emptyState" class="hidden flex flex-col items-center justify-center py-20 opacity-50">
@@ -342,31 +349,33 @@
                         await signInAnonymously(auth);
                     }
                 } catch (e) {
-                    console.error("Firebase Auth Failed:", e);
-                    isUsingFirebase = false;
-                    loadLocalData();
+                    console.warn("Auth Failed, continuing offline:", e.message);
+                    // Don't disable Firebase yet, wait for read fail
                 }
             };
             initAuth();
 
+            // Setup Listeners
             onAuthStateChanged(auth, (user) => {
-                if (user) {
-                    const q = collection(db, 'artifacts', appId, 'public', 'data', 'products');
-                    onSnapshot(q, (snapshot) => {
-                        products = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
-                        products.sort((a, b) => {
-                            const dateA = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate() : (a.createdAt ? new Date(a.createdAt) : new Date(0));
-                            const dateB = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate() : (b.createdAt ? new Date(b.createdAt) : new Date(0));
-                            return dateB - dateA; 
-                        });
-                        document.getElementById('loadingState').classList.add('hidden');
-                        renderProducts(document.getElementById('searchInputDesktop').value);
-                    }, (error) => {
-                        console.error("DB Read Error:", error);
-                        isUsingFirebase = false;
-                        loadLocalData();
+                // Try reading even if user is null (public rules might allow it)
+                const q = collection(db, 'artifacts', appId, 'public', 'data', 'products');
+                onSnapshot(q, (snapshot) => {
+                    products = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                    products.sort((a, b) => {
+                        const dateA = a.createdAt && a.createdAt.toDate ? a.createdAt.toDate() : (a.createdAt ? new Date(a.createdAt) : new Date(0));
+                        const dateB = b.createdAt && b.createdAt.toDate ? b.createdAt.toDate() : (b.createdAt ? new Date(b.createdAt) : new Date(0));
+                        return dateB - dateA; 
                     });
-                }
+                    
+                    // Success!
+                    updateConnectionStatus(true);
+                    isUsingFirebase = true;
+                    renderProducts(document.getElementById('searchInputDesktop').value);
+                }, (error) => {
+                    console.warn("DB Read Error, switching to Local:", error.code);
+                    isUsingFirebase = false;
+                    loadLocalData();
+                });
             });
         } catch (err) {
             console.error("Firebase Init Error:", err);
@@ -375,10 +384,39 @@
         }
 
         function loadLocalData() {
-            console.log("Using LocalStorage Mode");
+            updateConnectionStatus(false);
             products = JSON.parse(localStorage.getItem('vipProducts')) || [];
             document.getElementById('loadingState').classList.add('hidden');
             renderProducts(document.getElementById('searchInputDesktop').value);
+        }
+
+        function updateConnectionStatus(isLive) {
+            document.getElementById('loadingState').classList.add('hidden');
+            const liveStatusEl = document.getElementById('liveStatus');
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+
+            if(isLive) {
+                // Only show if Admin (handled in updateUI logic usually, but here we can manage class directly)
+                // But wait, user requested: "Screen ke upar ek Green/Red Dot aayega jo batayega ke aap "Live" hain ya nahi."
+                // And previously asked to show only for Admin.
+                
+                statusDot.className = "w-2 h-2 rounded-full bg-green-500 animate-pulse";
+                liveStatusEl.className = liveStatusEl.className.replace('hidden', 'flex').replace('bg-red-500/10', 'bg-green-500/10').replace('border-red-500/20', 'border-green-500/20');
+                if(!currentUser || !currentUser.isAdmin) liveStatusEl.classList.add('hidden'); // Ensure hidden for non-admins
+                else liveStatusEl.classList.remove('hidden');
+
+                statusText.innerText = "LIVE";
+                statusText.className = "text-[10px] text-green-400 font-bold";
+            } else {
+                statusDot.className = "w-2 h-2 rounded-full bg-red-500";
+                liveStatusEl.className = liveStatusEl.className.replace('hidden', 'flex').replace('bg-green-500/10', 'bg-red-500/10').replace('border-green-500/20', 'border-red-500/20');
+                if(!currentUser || !currentUser.isAdmin) liveStatusEl.classList.add('hidden');
+                else liveStatusEl.classList.remove('hidden');
+
+                statusText.innerText = "OFFLINE";
+                statusText.className = "text-[10px] text-red-400 font-bold";
+            }
         }
 
         // --- APP LOGIC ---
@@ -403,70 +441,84 @@
 
         // --- VISITOR TRACKING LOGIC ---
         async function trackVisit() {
-            // Check session to avoid duplicate counts on reload
             if (sessionStorage.getItem('visited_today')) return;
             sessionStorage.setItem('visited_today', 'true');
+            const today = new Date().toISOString().split('T')[0];
 
-            const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-
-            if (isUsingFirebase && auth.currentUser) {
+            if (isUsingFirebase) {
                 try {
-                    // We use a separate collection for stats
-                    // Document ID = Date string
                     const statsRef = doc(db, 'artifacts', appId, 'public', 'data', 'stats', today);
                     const docSnap = await getDoc(statsRef);
-                    
                     if (docSnap.exists()) {
                         await setDoc(statsRef, { count: docSnap.data().count + 1 }, { merge: true });
                     } else {
                         await setDoc(statsRef, { count: 1 });
                     }
                 } catch (e) {
-                    console.error("Stats Error:", e);
+                    console.warn("Stats Write Error, using local:", e.code);
+                    updateLocalStats(today);
                 }
             } else {
-                // Local Fallback
-                let stats = JSON.parse(localStorage.getItem('vipStats')) || {};
-                stats[today] = (stats[today] || 0) + 1;
-                localStorage.setItem('vipStats', JSON.stringify(stats));
+                updateLocalStats(today);
             }
         }
 
-        async function loadStats() {
-            let todayCount = 0;
-            let monthCount = 0;
-            let totalCount = 0;
-            const today = new Date().toISOString().split('T')[0];
-            const currentMonth = today.substring(0, 7); // YYYY-MM
+        function updateLocalStats(today) {
+            let stats = JSON.parse(localStorage.getItem('vipStats')) || {};
+            stats[today] = (stats[today] || 0) + 1;
+            localStorage.setItem('vipStats', JSON.stringify(stats));
+        }
 
-            if (isUsingFirebase && auth.currentUser) {
+        async function loadStats() {
+            let todayCount = 0, monthCount = 0, totalCount = 0;
+            const today = new Date().toISOString().split('T')[0];
+            const currentMonth = today.substring(0, 7);
+
+            if (isUsingFirebase) {
                 try {
                     const statsCol = collection(db, 'artifacts', appId, 'public', 'data', 'stats');
                     const snapshot = await getDocs(statsCol);
-                    
                     snapshot.forEach(doc => {
                         const date = doc.id;
                         const count = doc.data().count || 0;
-                        
                         totalCount += count;
                         if (date === today) todayCount = count;
                         if (date.startsWith(currentMonth)) monthCount += count;
                     });
-                } catch (e) { console.error("Stats Fetch Error:", e); }
+                } catch (e) { 
+                    console.warn("Stats Read Error:", e);
+                    loadLocalStats(today, currentMonth);
+                }
             } else {
-                // Local Fallback Calculation
-                let stats = JSON.parse(localStorage.getItem('vipStats')) || {};
-                Object.keys(stats).forEach(date => {
-                    const count = stats[date];
-                    totalCount += count;
-                    if (date === today) todayCount = count;
-                    if (date.startsWith(currentMonth)) monthCount += count;
-                });
+                loadLocalStats(today, currentMonth);
             }
 
-            document.getElementById('statToday').innerText = todayCount;
-            document.getElementById('statMonth').innerText = monthCount;
-            document.getElementById('statTotal').innerText = totalCount;
+            setTimeout(() => {
+                const tEl = document.getElementById('statToday');
+                if(tEl) {
+                    tEl.innerText = todayCount;
+                    document.getElementById('statMonth').innerText = monthCount;
+                    document.getElementById('statTotal').innerText = totalCount;
+                }
+            }, 100);
+        }
+
+        function loadLocalStats(today, currentMonth) {
+            let todayCount = 0, monthCount = 0, totalCount = 0;
+            let stats = JSON.parse(localStorage.getItem('vipStats')) || {};
+            Object.keys(stats).forEach(date => {
+                const count = stats[date];
+                totalCount += count;
+                if (date === today) todayCount = count;
+                if (date.startsWith(currentMonth)) monthCount += count;
+            });
+            setTimeout(() => {
+                if(document.getElementById('statToday')) {
+                    document.getElementById('statToday').innerText = todayCount;
+                    document.getElementById('statMonth').innerText = monthCount;
+                    document.getElementById('statTotal').innerText = totalCount;
+                }
+            }, 100);
         }
 
         // --- Renders ---
@@ -609,18 +661,23 @@
                 if (isUsingFirebase) {
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), productData);
                 } else {
-                    // Fallback local
                     productData.id = Date.now().toString();
                     products.unshift(productData);
                     localStorage.setItem('vipProducts', JSON.stringify(products));
                     renderProducts();
+                    alert("Saved Locally (Sync Failed)");
                 }
                 closeAddModal();
                 e.target.reset();
                 tempMedia = [];
                 renderMediaPreview();
             } catch (err) {
-                alert("Upload failed: " + err.message);
+                alert("Upload failed completely. " + err.message);
+                // Last ditch effort: local save
+                productData.id = Date.now().toString();
+                products.unshift(productData);
+                localStorage.setItem('vipProducts', JSON.stringify(products));
+                renderProducts();
             } finally {
                 btn.innerHTML = `<i class="fa-solid fa-paper-plane mr-2"></i> Publish Product`;
                 btn.disabled = false;
@@ -632,7 +689,12 @@
             if (isUsingFirebase) {
                 try {
                     await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', id));
-                } catch(e) { alert("Error deleting: " + e.message); }
+                } catch(e) { 
+                    alert("Sync Error. Deleting locally only.");
+                    products = products.filter(p => p.id !== id);
+                    localStorage.setItem('vipProducts', JSON.stringify(products));
+                    renderProducts();
+                }
             } else {
                 products = products.filter(p => p.id !== id);
                 localStorage.setItem('vipProducts', JSON.stringify(products));
@@ -723,11 +785,23 @@
         
         window.updateUI = function(){
             const g=document.getElementById('guestControls'), a=document.getElementById('authControls');
-            if(!currentUser) { g.classList.remove('hidden'); a.classList.add('hidden'); }
+            const statusIndicator = document.getElementById('liveStatus');
+
+            if(!currentUser) { 
+                g.classList.remove('hidden'); 
+                a.classList.add('hidden'); 
+                if(statusIndicator) statusIndicator.classList.add('hidden'); // Hide for guests
+            }
             else {
                 g.classList.add('hidden'); a.classList.remove('hidden'); a.classList.add('flex');
-                if(currentUser.isAdmin) a.innerHTML = `<span class="hidden lg:inline text-[10px] text-green-400 font-bold border border-green-500/20 px-2 py-1 rounded">ADMIN</span><button onclick="openAddModal()" class="btn-gold w-8 h-8 flex items-center justify-center rounded-lg shadow-lg text-black"><i class="fa-solid fa-plus"></i></button><button onclick="logoutUser()" class="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-400 border border-red-500/20"><i class="fa-solid fa-power-off"></i></button>`;
-                else a.innerHTML = `<div class="w-8 h-8 rounded-full bg-yellow-700 flex items-center justify-center text-xs font-bold text-white">${currentUser.name[0]}</div><button onclick="logoutUser()" class="text-xs text-gray-500 hover:text-white">Logout</button>`;
+                if(currentUser.isAdmin) {
+                    a.innerHTML = `<span class="hidden lg:inline text-[10px] text-green-400 font-bold border border-green-500/20 px-2 py-1 rounded">ADMIN</span><button onclick="openAddModal()" class="btn-gold w-8 h-8 flex items-center justify-center rounded-lg shadow-lg text-black"><i class="fa-solid fa-plus"></i></button><button onclick="logoutUser()" class="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center text-red-400 border border-red-500/20"><i class="fa-solid fa-power-off"></i></button>`;
+                    if(statusIndicator) statusIndicator.classList.remove('hidden'); // Show for admin
+                }
+                else {
+                    a.innerHTML = `<div class="w-8 h-8 rounded-full bg-yellow-700 flex items-center justify-center text-xs font-bold text-white">${currentUser.name[0]}</div><button onclick="logoutUser()" class="text-xs text-gray-500 hover:text-white">Logout</button>`;
+                    if(statusIndicator) statusIndicator.classList.add('hidden'); // Hide for normal users
+                }
             }
             renderProducts(document.getElementById('searchInputDesktop').value);
         }
