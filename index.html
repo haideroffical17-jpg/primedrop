@@ -324,23 +324,24 @@
         import { getFirestore, collection, addDoc, deleteDoc, doc, getDoc, getDocs, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
+        // Use the config provided by user
         const userFirebaseConfig = {
-            apiKey: "AIzaSyB1ZNQzvhgWvRXSyMNX1e6tT0o7rYtvg1Y",
-            authDomain: "primedrop-16d12.firebaseapp.com",
-            databaseURL: "https://primedrop-16d12-default-rtdb.firebaseio.com",
-            projectId: "primedrop-16d12",
-            storageBucket: "primedrop-16d12.firebasestorage.app",
-            messagingSenderId: "885544282272",
-            appId: "1:885544282272:web:c25c3530a7eb0cfacdc1c5",
-            measurementId: "G-856W2RBV9B"
+            apiKey: "AIzaSyCta8jzYrib54xK4SXJ7oLlVp1_LBLRFHg",
+            authDomain: "primedropvip.firebaseapp.com",
+            projectId: "primedropvip",
+            storageBucket: "primedropvip.firebasestorage.app",
+            messagingSenderId: "581115848208",
+            appId: "1:581115848208:web:ea566faec4c92035b7cc95",
+            measurementId: "G-YJLF3C9VNG"
         };
 
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : userFirebaseConfig;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'primedrop-16d12'; 
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'primedropvip'; // Ensure this matches projectId
 
         let db, auth, products = [];
         let isUsingFirebase = false;
         
+        // Initialize Firebase - STRICT MODE
         try {
             const app = initializeApp(firebaseConfig);
             auth = getAuth(app);
@@ -355,10 +356,11 @@
                         await signInAnonymously(auth);
                     }
                 } catch (e) {
-                    // Fail silently for auth, try reading public anyway
-                    console.warn("Auth Init Warning:", e.message);
+                    console.error("Auth Failed:", e);
+                    document.getElementById('loadingState').innerHTML = `<p class='text-red-500 font-bold'>Auth Error: ${e.message}</p>`;
                 }
             };
+            
             initAuth();
 
             onAuthStateChanged(auth, (user) => {
@@ -450,7 +452,7 @@
                         await setDoc(statsRef, { count: 1 });
                     }
                 } catch (e) {
-                    console.warn("Stats Write Error:", e.message);
+                    console.warn("Stats Write Error (Likely Permission):", e.code);
                 }
             }
         }
