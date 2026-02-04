@@ -4,7 +4,7 @@
     <link rel="icon" type="image/png" href="https://i.ibb.co/q42kpqz/PrimeDrop-Logo.png">
     
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>PrimeDrop VIP Store</title>
 </head>
     <!-- Tailwind CSS -->
@@ -31,6 +31,13 @@
                     backgroundImage: {
                         'gold-text': 'linear-gradient(to right, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c)',
                         'gold-card': 'linear-gradient(135deg, rgba(255,215,0,0.1) 0%, rgba(0,0,0,0) 100%)',
+                    },
+                    screens: {
+                        'xs': '375px',
+                        'sm': '640px',
+                        'md': '768px',
+                        'lg': '1024px',
+                        'xl': '1280px',
                     }
                 }
             }
@@ -42,6 +49,7 @@
             color: #ffffff; 
             background-image: radial-gradient(circle at top center, #1a1a1a 0%, #000000 70%);
             min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
         }
         .text-gold-gradient {
             background: linear-gradient(to right, #bf953f, #e3c472, #b38728, #aa771c);
@@ -50,7 +58,7 @@
             font-weight: 700;
         }
         .glass-nav {
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.95);
             backdrop-filter: blur(20px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
@@ -60,9 +68,12 @@
             border: 1px solid rgba(255, 215, 0, 0.1);
             box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
         }
-        .gold-glow:hover {
-            border-color: rgba(212, 175, 55, 0.5);
-            box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+        @media (hover: hover) {
+            .gold-glow:hover {
+                border-color: rgba(212, 175, 55, 0.5);
+                box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+            }
+            .btn-gold:hover { filter: brightness(1.1); }
         }
         .btn-gold {
             background: linear-gradient(to bottom right, #bf953f, #aa771c);
@@ -70,12 +81,21 @@
             font-weight: 600;
             text-shadow: 0 1px 0 rgba(255,255,255,0.4);
         }
-        .btn-gold:hover { filter: brightness(1.1); }
         .selected-pill {
             background: #bf953f !important;
             color: black !important;
             border-color: #bf953f !important;
             font-weight: bold;
+        }
+        .sidebar-item:hover, .sidebar-item.active {
+            background: rgba(191, 149, 63, 0.15);
+            border-left: 3px solid #bf953f;
+            color: #bf953f;
+            padding-left: 12px;
+        }
+        .sidebar-item {
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
         }
         .size-btn.selected {
             background: #bf953f;
@@ -90,6 +110,7 @@
         .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #bf953f; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
         .modal-animate { animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+        
         .input-group input:focus ~ label,
         .input-group input:not(:placeholder-shown) ~ label,
         .input-group textarea:focus ~ label,
@@ -98,38 +119,55 @@
         .input-group select:not(:placeholder-shown) ~ label {
             top: -8px; font-size: 10px; color: #bf953f; background: #000; padding: 0 4px;
         }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        
+        /* Product View Styles */
+        .thumb-img.active { border-color: #bf953f; opacity: 1; }
+
+        /* Mobile Sidebar Transition */
+        #mobileSidebar { transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        #mobileOverlay { transition: opacity 0.3s ease; }
     </style>
 </head>
-<body class="flex flex-col font-sans pb-20 md:pb-0">
+<body class="flex flex-col font-sans pb-24 md:pb-0">
 
     <!-- Navbar -->
-    <nav class="fixed top-0 w-full z-50 glass-nav">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav class="fixed top-0 w-full z-50 glass-nav transition-all duration-300">
+        <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 md:h-20">
-                <div class="flex items-center gap-2 cursor-pointer" onclick="window.scrollTo(0,0)">
-                    <div class="w-8 h-8 md:w-10 md:h-10 rounded-full btn-gold flex items-center justify-center shadow-lg shadow-yellow-900/40">
-                        <i class="fa-solid fa-crown text-sm md:text-lg"></i>
-                    </div>
-                    <div class="leading-tight">
-                        <h1 class="text-xl md:text-2xl tracking-tighter text-white font-light">PRIME<span class="text-gold-gradient font-bold">DROP</span></h1>
+                <div class="flex items-center gap-3 cursor-pointer">
+                    <!-- Mobile Menu Button -->
+                    <button onclick="toggleSidebar()" class="lg:hidden text-white p-2 hover:bg-white/10 rounded-lg">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+
+                    <div class="flex items-center gap-2" onclick="window.scrollTo(0,0)">
+                        <div class="w-8 h-8 md:w-10 md:h-10 rounded-full btn-gold flex items-center justify-center shadow-lg shadow-yellow-900/40">
+                            <i class="fa-solid fa-crown text-sm md:text-lg"></i>
+                        </div>
+                        <div class="leading-tight">
+                            <h1 class="text-lg md:text-2xl tracking-tighter text-white font-light">PRIME<span class="text-gold-gradient font-bold">DROP</span></h1>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Desktop Search -->
                 <div class="hidden md:flex items-center bg-white/5 rounded-full px-4 py-2 border border-white/10 focus-within:border-yellow-600/50 transition-colors w-96">
                     <i class="fa-solid fa-search text-gray-500"></i>
-                    <input type="text" id="searchInputDesktop" placeholder="Search (e.g. Watches)..." class="bg-transparent border-none outline-none text-sm ml-3 w-full text-white placeholder-gray-600" onkeyup="filterProducts(this.value)">
+                    <input type="text" id="searchInputDesktop" placeholder="Search (e.g. Watches)..." class="bg-transparent border-none outline-none text-sm ml-3 w-full text-white placeholder-gray-600" onkeyup="handleSearch(this.value)" onkeydown="handleSearchEnter(event)">
                 </div>
-                <div class="flex items-center gap-4">
+
+                <div class="flex items-center gap-3 md:gap-4">
                     <div class="hidden sm:block text-xs font-bold text-gray-500 tracking-wider">USD ($)</div>
                     
-                    <!-- Live Status Indicator (Hidden by default) -->
                     <div id="liveStatus" class="hidden items-center gap-1 bg-red-500/10 px-2 py-1 rounded-full border border-red-500/20" title="Connection Status">
                         <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse" id="statusDot"></div>
                         <span class="text-[10px] text-red-400 font-bold" id="statusText">CONNECTING</span>
                     </div>
 
-                    <div id="guestControls" class="flex items-center gap-3">
+                    <div id="guestControls" class="flex items-center gap-2 md:gap-3">
                         <button onclick="openLoginModal()" class="hidden md:block text-sm text-gray-400 hover:text-white transition">Login</button>
-                        <button onclick="openSignupModal()" class="btn-gold px-5 py-1.5 rounded-full text-xs md:text-sm shadow-lg shadow-yellow-500/10 hover:shadow-yellow-500/30 transition-all transform hover:-translate-y-0.5">JOIN VIP</button>
+                        <button onclick="openSignupModal()" class="btn-gold px-4 py-1.5 md:px-5 md:py-1.5 rounded-full text-[10px] md:text-sm font-bold shadow-lg shadow-yellow-500/10 transition-transform active:scale-95">JOIN VIP</button>
                     </div>
                     <div id="authControls" class="hidden flex items-center gap-3"></div>
                 </div>
@@ -137,116 +175,130 @@
         </div>
     </nav>
 
-    <!-- Mobile Search -->
-    <div class="md:hidden pt-20 px-4 pb-2">
-        <div class="flex items-center bg-[#111] rounded-xl px-4 py-3 border border-white/5 focus-within:border-yellow-600/50">
+    <!-- Mobile Search Bar -->
+    <div class="md:hidden pt-20 px-4 pb-2 fixed w-full z-40 bg-gradient-to-b from-black to-transparent pointer-events-none">
+        <div class="pointer-events-auto flex items-center bg-[#111] rounded-xl px-4 py-3 border border-white/5 focus-within:border-yellow-600/50 shadow-lg">
             <i class="fa-solid fa-search text-gray-500"></i>
-            <input type="text" id="searchInputMobile" placeholder="Search..." class="bg-transparent border-none outline-none text-sm ml-3 w-full text-white placeholder-gray-600" onkeyup="filterProducts(this.value)">
+            <input type="text" id="searchInputMobile" placeholder="Search products..." class="bg-transparent border-none outline-none text-sm ml-3 w-full text-white placeholder-gray-600" onkeyup="handleSearch(this.value)" onkeydown="handleSearchEnter(event)">
         </div>
     </div>
 
-    <!-- Hero -->
-    <div class="pt-4 md:pt-28 pb-6 px-4">
-        <div class="max-w-7xl mx-auto rounded-[2rem] overflow-hidden relative min-h-[220px] md:h-80 bg-[#111] border border-white/5 flex items-center shadow-2xl group">
+    <!-- Hero Section -->
+    <div class="pt-36 md:pt-28 pb-6 px-4">
+        <div class="max-w-screen-2xl mx-auto rounded-[1.5rem] md:rounded-[2rem] overflow-hidden relative min-h-[180px] md:h-80 bg-[#111] border border-white/5 flex items-center shadow-2xl group">
             <div class="absolute inset-0 opacity-40 bg-[url('https://images.unsplash.com/photo-1550953936-a60d03b0c960?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center transition-transform duration-1000 group-hover:scale-105"></div>
             <div class="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent"></div>
             <div class="relative z-10 px-6 md:px-16 w-full">
-                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-yellow-500/30 bg-yellow-500/10 backdrop-blur-md mb-4">
-                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-yellow-500/30 bg-yellow-500/10 backdrop-blur-md mb-2 md:mb-4">
+                    <span class="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-green-500 animate-pulse"></span>
                     <span class="text-[10px] md:text-xs font-bold text-yellow-500 tracking-widest uppercase">New Drops Live</span>
                 </div>
-                <h2 class="text-3xl md:text-6xl font-extrabold text-white mb-2 tracking-tight">LUXURY <br class="md:hidden"> <span class="text-gold-gradient">REDEFINED</span></h2>
-                <button onclick="document.getElementById('categoryContainer').scrollIntoView({behavior: 'smooth'})" class="text-white text-xs md:text-sm border-b border-yellow-500 pb-1 hover:text-yellow-400 transition-colors">Explore Categories <i class="fa-solid fa-arrow-down ml-1 text-[10px]"></i></button>
+                <h2 class="text-2xl md:text-6xl font-extrabold text-white mb-2 tracking-tight">LUXURY <br class="md:hidden"> <span class="text-gold-gradient">REDEFINED</span></h2>
+                <button onclick="toggleSidebar()" class="lg:hidden text-white text-xs border-b border-yellow-500 pb-1 hover:text-yellow-400 transition-colors">Browse Categories <i class="fa-solid fa-bars ml-1 text-[10px]"></i></button>
             </div>
         </div>
     </div>
 
-    <!-- Categories -->
-    <div id="categoryContainer" class="max-w-7xl mx-auto px-4 mb-8 overflow-x-auto hide-scrollbar">
-        <div id="categoriesList" class="flex gap-3 whitespace-nowrap pb-2"></div>
+    <!-- MAIN CONTENT LAYOUT -->
+    <div id="gridContainer" class="max-w-screen-2xl mx-auto px-4 flex gap-8 pb-20 relative">
+        
+        <!-- SIDEBAR (Unified for Mobile Drawer & Desktop Sticky) -->
+        <!-- Overlay for mobile -->
+        <div id="mobileOverlay" onclick="toggleSidebar()" class="fixed inset-0 bg-black/80 z-[60] hidden lg:hidden backdrop-blur-sm opacity-0"></div>
+        
+        <aside id="mainSidebar" class="fixed lg:sticky top-0 lg:top-24 left-0 h-screen lg:h-[calc(100vh-120px)] w-72 bg-[#0f0f0f] lg:bg-[#0f0f0f]/80 z-[70] lg:z-auto transform -translate-x-full lg:translate-x-0 transition-transform duration-300 border-r lg:border border-white/10 lg:rounded-2xl lg:backdrop-blur-xl p-4 shrink-0 overflow-y-auto custom-scrollbar shadow-2xl lg:shadow-none">
+            
+            <div class="flex items-center justify-between mb-4 px-2 lg:hidden">
+                <h3 class="text-white font-bold text-xl"><i class="fa-solid fa-crown text-yellow-500 mr-2"></i>Menu</h3>
+                <button onclick="toggleSidebar()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-times text-xl"></i></button>
+            </div>
+
+            <h3 class="hidden lg:flex text-white font-bold text-lg mb-4 px-2 items-center gap-2"><i class="fa-solid fa-bars text-gold-gradient"></i> Categories</h3>
+            
+            <div id="categoriesSidebar" class="space-y-1">
+                <!-- Populated via JS -->
+            </div>
+        </aside>
+
+        <!-- Products Grid Area -->
+        <main class="flex-1 w-full min-w-0">
+            <div class="flex items-center justify-between mb-4 md:mb-6">
+                <h3 class="text-lg md:text-2xl font-light text-white"><span id="currentCategoryTitle" class="font-bold text-white">All Products</span></h3>
+            </div>
+            
+            <div id="loadingState" class="text-center py-20">
+                <div class="w-10 h-10 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p class="text-gray-500 text-sm">Loading...</p>
+            </div>
+
+            <div id="errorState" class="hidden text-center py-20 bg-red-500/5 rounded-2xl border border-red-500/20 mx-4"></div>
+
+            <div id="emptyState" class="hidden flex flex-col items-center justify-center py-20 opacity-50">
+                <i class="fa-solid fa-magnifying-glass text-4xl text-gray-600 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-300">No Products Found</h3>
+                <p class="text-gray-600 text-sm">Try searching for something else.</p>
+            </div>
+
+            <!-- Responsive Grid -->
+            <div id="productGrid" class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-6"></div>
+        </main>
     </div>
 
-    <!-- Products -->
-    <main class="flex-grow max-w-7xl mx-auto px-4 w-full">
-        <div class="flex items-center justify-between mb-6">
-            <h3 class="text-lg md:text-2xl font-light text-white"><span id="currentCategoryTitle" class="font-bold text-white">All Products</span></h3>
-        </div>
-        
-        <!-- Loading State -->
-        <div id="loadingState" class="text-center py-20">
-            <div class="w-10 h-10 border-4 border-yellow-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-            <p class="text-gray-500 text-sm">Synchronizing with Global Database...</p>
-        </div>
-
-        <!-- Error State (If DB Fails) -->
-        <div id="errorState" class="hidden text-center py-20 bg-red-500/5 rounded-2xl border border-red-500/20 mx-4">
-            <i class="fa-solid fa-triangle-exclamation text-4xl text-red-500 mb-4"></i>
-            <h3 class="text-lg font-medium text-red-400">Connection Failed</h3>
-            <p class="text-gray-500 text-sm mt-2">Cannot connect to Live Database.</p>
-            <p class="text-gray-600 text-xs mt-1">Please check your internet or database permissions.</p>
-        </div>
-
-        <div id="emptyState" class="hidden flex flex-col items-center justify-center py-20 opacity-50">
-            <i class="fa-solid fa-crown text-4xl text-gray-600 mb-4"></i>
-            <h3 class="text-lg font-medium text-gray-300">No items found</h3>
-            <p class="text-gray-600 text-sm">Be the first to add something.</p>
-        </div>
-        <div id="productGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"></div>
-    </main>
-
-    <footer class="mt-20 border-t border-white/5 bg-black py-10 pb-24 md:pb-10 text-center">
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-white/5 bg-black py-10 text-center">
         <p class="text-gray-600 text-xs">&copy; 2026 PrimeDrop VIP.</p>
     </footer>
 
-    <!-- Mobile Nav -->
-    <div class="md:hidden fixed bottom-0 w-full z-50 glass-nav border-t border-white/5 pb-safe">
+    <!-- Mobile Bottom Nav -->
+    <div class="md:hidden fixed bottom-0 w-full z-50 glass-nav border-t border-white/5 pb-safe rounded-t-2xl">
         <div class="flex justify-around items-center h-16 px-2">
-            <button onclick="window.scrollTo(0,0)" class="flex flex-col items-center justify-center w-full h-full text-yellow-500"><i class="fa-solid fa-house text-lg mb-1"></i><span class="text-[10px]">Home</span></button>
-            <button onclick="document.getElementById('searchInputMobile').focus()" class="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-white transition"><i class="fa-solid fa-search text-lg mb-1"></i><span class="text-[10px]">Search</span></button>
-            <button onclick="handleProfileClick()" class="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-white transition">
+            <button onclick="window.scrollTo(0,0)" class="flex flex-col items-center justify-center w-full h-full text-yellow-500 active:scale-90 transition-transform"><i class="fa-solid fa-house text-lg mb-1"></i><span class="text-[10px]">Home</span></button>
+            <button onclick="document.getElementById('searchInputMobile').focus()" class="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-white active:scale-90 transition-transform"><i class="fa-solid fa-search text-lg mb-1"></i><span class="text-[10px]">Search</span></button>
+            <button onclick="handleProfileClick()" class="flex flex-col items-center justify-center w-full h-full text-gray-500 hover:text-white active:scale-90 transition-transform">
                 <div class="relative"><i class="fa-regular fa-user text-lg mb-1"></i><span id="navDot" class="hidden absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span></div>
                 <span class="text-[10px]">Account</span>
             </button>
         </div>
     </div>
 
-    <!-- AUTH MODALS -->
+    <!-- LOGIN MODAL -->
     <div id="loginModal" class="fixed inset-0 z-[60] hidden bg-black/95 backdrop-blur-md flex items-end md:items-center justify-center sm:p-4">
         <div class="bg-[#111] w-full md:w-[400px] rounded-t-3xl md:rounded-3xl border border-white/10 p-8 modal-animate shadow-2xl relative">
-            <button onclick="closeLoginModal()" class="absolute top-6 right-6 text-gray-500 hover:text-white"><i class="fa-solid fa-times text-lg"></i></button>
+            <button onclick="closeLoginModal()" class="absolute top-6 right-6 text-gray-500 hover:text-white p-2"><i class="fa-solid fa-times text-lg"></i></button>
             <div class="mb-8"><h2 class="text-3xl font-bold text-white mb-2">Welcome Back</h2></div>
             <form onsubmit="handleLogin(event)" class="space-y-6">
                 <div class="input-group relative"><input type="email" id="loginEmail" required class="w-full bg-transparent border border-gray-700 rounded-lg px-4 py-3.5 text-sm text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm peer-placeholder-shown:text-base pointer-events-none">Email</label></div>
                 <div class="input-group relative"><input type="password" id="loginPass" required class="w-full bg-transparent border border-gray-700 rounded-lg px-4 py-3.5 text-sm text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm peer-placeholder-shown:text-base pointer-events-none">Password</label></div>
                 <p id="loginError" class="hidden text-red-500 text-xs">Invalid credentials</p>
-                <button type="submit" class="w-full btn-gold py-4 rounded-xl text-sm font-bold uppercase">Access Account</button>
+                <button type="submit" class="w-full btn-gold py-4 rounded-xl text-sm font-bold uppercase active:scale-95 transition-transform">Access Account</button>
             </form>
         </div>
     </div>
 
+    <!-- SIGNUP MODAL -->
     <div id="signupModal" class="fixed inset-0 z-[60] hidden bg-black/95 backdrop-blur-md flex items-end md:items-center justify-center sm:p-4">
         <div class="bg-[#111] w-full md:w-[400px] rounded-t-3xl md:rounded-3xl border border-white/10 p-8 modal-animate shadow-2xl relative">
-            <button onclick="closeSignupModal()" class="absolute top-6 right-6 text-gray-500 hover:text-white"><i class="fa-solid fa-times text-lg"></i></button>
+            <button onclick="closeSignupModal()" class="absolute top-6 right-6 text-gray-500 hover:text-white p-2"><i class="fa-solid fa-times text-lg"></i></button>
             <div class="mb-8"><h2 class="text-2xl font-bold text-white mb-2">Join VIP</h2></div>
             <form onsubmit="handleSignup(event)" class="space-y-5">
                 <div class="input-group relative"><input type="text" id="signupName" required class="w-full bg-transparent border border-gray-700 rounded-lg px-4 py-3.5 text-sm text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm peer-placeholder-shown:text-base pointer-events-none">Full Name</label></div>
                 <div class="input-group relative"><input type="email" id="signupEmail" required class="w-full bg-transparent border border-gray-700 rounded-lg px-4 py-3.5 text-sm text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm peer-placeholder-shown:text-base pointer-events-none">Email</label></div>
                 <div class="input-group relative"><input type="password" id="signupPass" required class="w-full bg-transparent border border-gray-700 rounded-lg px-4 py-3.5 text-sm text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm peer-placeholder-shown:text-base pointer-events-none">Password</label></div>
-                <button type="submit" class="w-full btn-gold py-4 rounded-xl text-sm font-bold uppercase">Create Account</button>
+                <button type="submit" class="w-full btn-gold py-4 rounded-xl text-sm font-bold uppercase active:scale-95 transition-transform">Create Account</button>
             </form>
         </div>
     </div>
 
-    <!-- ADD PRODUCT MODAL (with STATS) -->
-    <div id="addModal" class="fixed inset-0 z-[60] hidden bg-black/95 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-[#111] w-full max-w-lg rounded-2xl border border-white/10 flex flex-col max-h-[90vh] modal-animate shadow-2xl">
-            <div class="flex justify-between items-center p-6 border-b border-white/5 bg-[#111] rounded-t-2xl z-10">
+    <!-- ADD PRODUCT MODAL (Admin) -->
+    <div id="addModal" class="fixed inset-0 z-[60] hidden bg-black/95 backdrop-blur-md flex items-center justify-center p-0 md:p-4">
+        <div class="bg-[#111] w-full h-full md:h-auto md:max-w-lg md:rounded-2xl border-0 md:border border-white/10 flex flex-col max-h-[100vh] md:max-h-[90vh] modal-animate shadow-2xl">
+            <div class="flex justify-between items-center p-6 border-b border-white/5 bg-[#111] md:rounded-t-2xl z-10">
                 <h2 class="text-xl font-bold text-white"><span class="text-gold-gradient">Admin</span> Dashboard</h2>
-                <button onclick="closeAddModal()" class="text-gray-500 hover:text-white"><i class="fa-solid fa-times"></i></button>
+                <button onclick="closeAddModal()" class="text-gray-500 hover:text-white p-2"><i class="fa-solid fa-times text-lg"></i></button>
             </div>
             
-            <div class="overflow-y-auto p-6 custom-scrollbar flex-1">
-                <!-- STATS SECTION -->
+            <div class="overflow-y-auto p-6 custom-scrollbar flex-1 pb-24 md:pb-6">
+                <!-- STATS -->
                 <div class="grid grid-cols-3 gap-3 mb-6">
                     <div class="bg-gray-900/50 border border-white/10 rounded-xl p-3 text-center">
                         <p class="text-[10px] text-gray-400 uppercase tracking-widest">Today</p>
@@ -270,9 +322,12 @@
                     </div>
                     <div class="input-group relative"><input type="text" id="pTitle" required class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm px-1 pointer-events-none">Product Title</label></div>
                     <div class="grid grid-cols-2 gap-4">
-                        <div class="input-group relative"><input type="number" step="0.01" id="pPrice" required class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm px-1 pointer-events-none">Price</label></div>
+                        <div class="input-group relative"><input type="number" step="0.01" id="pPrice" required class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm px-1 pointer-events-none">Price (USD)</label></div>
                         <div class="input-group relative"><input type="number" step="0.01" id="pOldPrice" class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm px-1 pointer-events-none">Old Price</label></div>
                     </div>
+                    <!-- MANUAL DISCOUNT INPUT -->
+                    <div class="input-group relative"><input type="number" id="pDiscount" class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm px-1 pointer-events-none">Discount % (e.g. 50)</label></div>
+                    
                     <div class="input-group relative"><input type="text" id="pSizes" class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm px-1 pointer-events-none">Sizes (S, M, L)</label></div>
                     <div class="border-2 border-dashed border-white/10 rounded-xl p-4 text-center hover:border-yellow-500/50 transition">
                         <p class="text-sm text-gray-400 mb-2">Upload Photos & Videos</p>
@@ -287,47 +342,87 @@
                         <div id="mediaPreviewList" class="flex flex-wrap gap-2 mt-2 justify-center empty:hidden"></div>
                     </div>
                     <div class="input-group relative"><input type="url" id="pLink" required class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm px-1 pointer-events-none">Affiliate Link</label></div>
-                    <div class="input-group relative"><textarea id="pDesc" rows="2" class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" "></textarea><label class="absolute left-4 top-3.5 text-gray-500 text-sm px-1 pointer-events-none">Description</label></div>
+                    <div class="input-group relative"><textarea id="pDesc" rows="4" class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" "></textarea><label class="absolute left-4 top-3.5 text-gray-500 text-sm px-1 pointer-events-none">Description</label></div>
                 </form>
             </div>
-            <div class="p-6 border-t border-white/5 bg-[#111] rounded-b-2xl z-10 mt-auto">
-                <button id="publishBtn" type="submit" form="addProductForm" class="w-full btn-gold text-black font-bold py-3 rounded-xl transition shadow-lg shadow-yellow-900/20 hover:scale-[1.02]"><i class="fa-solid fa-paper-plane mr-2"></i> Publish Product</button>
+            <div class="p-6 border-t border-white/5 bg-[#111] md:rounded-b-2xl z-10 mt-auto">
+                <button id="publishBtn" type="submit" form="addProductForm" class="w-full btn-gold text-black font-bold py-3 rounded-xl transition shadow-lg shadow-yellow-900/20 active:scale-95"><i class="fa-solid fa-paper-plane mr-2"></i> Publish Product</button>
             </div>
         </div>
     </div>
 
-    <!-- VIEW MODAL -->
-    <div id="viewModal" class="fixed inset-0 z-[70] hidden bg-black/98 backdrop-blur-xl flex items-center justify-center p-0 md:p-4">
-        <div class="bg-[#050505] w-full md:max-w-4xl h-full md:h-auto md:rounded-3xl border-0 md:border border-white/10 overflow-hidden modal-animate flex flex-col md:flex-row relative">
-            <button onclick="closeViewModal()" class="absolute top-4 right-4 z-20 w-10 h-10 bg-black/50 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-white/20 transition"><i class="fa-solid fa-times"></i></button>
-            <div class="w-full md:w-1/2 h-[45vh] md:h-[500px] bg-[#111] flex items-center justify-center relative group">
-                <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white/5 to-transparent"></div>
-                <div id="sliderDisplay" class="w-full h-full flex items-center justify-center relative z-10"></div>
-                <button onclick="changeSlide(-1)" class="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-gold z-20"><i class="fa-solid fa-chevron-left"></i></button>
-                <button onclick="changeSlide(1)" class="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center hover:bg-gold z-20"><i class="fa-solid fa-chevron-right"></i></button>
-                <div id="sliderDots" class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1 z-20"></div>
-            </div>
-            <div class="w-full md:w-1/2 p-6 md:p-10 flex flex-col h-full overflow-y-auto">
-                <div class="mb-auto">
-                    <span id="mCategoryBadge" class="bg-white/10 text-gray-300 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">Category</span>
-                    <h2 id="mTitle" class="text-2xl md:text-3xl font-light text-white mb-2 mt-2 leading-tight"></h2>
-                    <div class="flex items-baseline gap-3 mb-4"><span id="mPrice" class="text-3xl font-bold text-gold-gradient"></span><span id="mOldPrice" class="text-sm text-gray-600 line-through"></span></div>
-                    <div id="mSizesContainer" class="hidden mb-6"><p class="text-xs text-gray-500 uppercase tracking-widest mb-2">Select Size</p><div id="mSizesList" class="flex flex-wrap gap-2"></div></div>
-                    <p id="mDesc" class="text-gray-400 text-sm leading-relaxed mb-8 font-light"></p>
+    <!-- VIEW PRODUCT MODAL (AliExpress Style) -->
+    <div id="viewModal" class="fixed inset-0 z-[70] hidden bg-black/98 backdrop-blur-xl flex items-center justify-center p-0 md:p-4 overflow-y-auto">
+        <div class="bg-[#050505] w-full max-w-6xl md:rounded-3xl border border-white/10 overflow-hidden modal-animate flex flex-col relative my-auto min-h-screen md:min-h-0">
+            <button onclick="closeViewModal()" class="absolute top-4 right-4 z-50 w-10 h-10 bg-black/50 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-white/20 transition"><i class="fa-solid fa-times"></i></button>
+            
+            <div class="flex flex-col lg:flex-row gap-0 lg:gap-8 p-0">
+                <!-- LEFT: Gallery -->
+                <div class="w-full lg:w-3/5 bg-[#0a0a0a] p-4 lg:p-8 flex flex-col-reverse lg:flex-row gap-4">
+                    <!-- Thumbnails (Vertical on Desktop, Horizontal on Mobile) -->
+                    <div id="sliderThumbs" class="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto lg:h-[500px] hide-scrollbar shrink-0"></div>
+                    
+                    <!-- Main Image -->
+                    <div class="flex-1 h-[40vh] lg:h-[500px] relative rounded-xl overflow-hidden bg-black/20 flex items-center justify-center border border-white/5">
+                        <div id="sliderDisplay" class="w-full h-full flex items-center justify-center p-2"></div>
+                        <!-- Arrows for mobile ease -->
+                        <button onclick="changeSlide(-1)" class="lg:hidden absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center z-10"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button onclick="changeSlide(1)" class="lg:hidden absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-black/50 text-white rounded-full flex items-center justify-center z-10"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
                 </div>
-                <a id="mLink" href="#" target="_blank" class="w-full btn-gold text-black font-bold text-base py-4 rounded-xl flex items-center justify-center gap-2 hover:scale-[1.02] shadow-2xl"><span>Purchase Now</span> <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i></a>
+
+                <!-- RIGHT: Info -->
+                <div class="w-full lg:w-2/5 p-6 lg:p-8 lg:pl-0 flex flex-col">
+                    <span id="mCategoryBadge" class="text-yellow-500 text-xs font-bold uppercase tracking-wider mb-2 block"></span>
+                    <h2 id="mTitle" class="text-2xl lg:text-3xl font-medium text-white mb-2 leading-tight"></h2>
+                    
+                    <!-- Rating Dummy -->
+                    <div class="flex items-center gap-2 mb-4 text-sm">
+                        <div class="text-yellow-400 flex gap-0.5">
+                            <i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star-half-stroke"></i>
+                        </div>
+                        <span class="text-gray-500">4.8 (23 Reviews) | 201 sold</span>
+                    </div>
+
+                    <!-- Price Section -->
+                    <div class="bg-white/5 rounded-xl p-4 mb-6 border border-white/5">
+                        <div class="text-pink-500 text-xs font-bold uppercase mb-1">SuperDeals</div>
+                        <div class="flex items-baseline gap-3 flex-wrap">
+                            <span class="text-3xl font-bold text-white">USD <span id="mPrice" class="text-4xl"></span></span>
+                            <span id="mOldPriceContainer" class="hidden text-gray-500 line-through text-lg"></span>
+                        </div>
+                        <div id="mDiscountBadge" class="hidden inline-block bg-pink-600 text-white text-xs font-bold px-2 py-1 rounded mt-2"></div>
+                    </div>
+
+                    <!-- Sizes -->
+                    <div id="mSizesContainer" class="hidden mb-6">
+                        <p class="text-sm text-gray-400 mb-2">Select Size</p>
+                        <div id="mSizesList" class="flex flex-wrap gap-2"></div>
+                    </div>
+
+                    <!-- Buy Button -->
+                    <div class="mt-auto pt-4">
+                        <a id="mLink" href="#" target="_blank" class="w-full btn-gold text-black font-bold text-lg py-4 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-2xl hover:brightness-110">
+                            <span>Buy Now</span> <i class="fa-solid fa-cart-shopping"></i>
+                        </a>
+                        <p class="text-center text-xs text-gray-500 mt-3"><i class="fa-solid fa-shield-halved mr-1"></i> Secure Payment via Affiliate</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DESCRIPTION SECTION (Bottom) -->
+            <div class="p-6 lg:p-8 border-t border-white/5 bg-[#080808]">
+                <h3 class="text-xl font-bold text-white mb-4">Product Description</h3>
+                <div class="prose prose-invert max-w-none text-gray-300 font-light leading-relaxed whitespace-pre-wrap" id="mDesc"></div>
             </div>
         </div>
     </div>
 
     <script type="module">
-        // --- FIREBASE SETUP ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, addDoc, deleteDoc, doc, getDoc, getDocs, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
-        // Use the config provided by user
         const userFirebaseConfig = {
             apiKey: "AIzaSyCta8jzYrib54xK4SXJ7oLlVp1_LBLRFHg",
             authDomain: "primedropvip.firebaseapp.com",
@@ -339,17 +434,14 @@
         };
 
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : userFirebaseConfig;
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'primedropvip'; // Ensure this matches projectId
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'primedropvip';
 
         let db, auth, products = [];
-        let isUsingFirebase = false;
         
-        // Initialize Firebase - STRICT MODE
         try {
             const app = initializeApp(firebaseConfig);
             auth = getAuth(app);
             db = getFirestore(app);
-            isUsingFirebase = true;
             
             const initAuth = async () => {
                 try {
@@ -377,24 +469,21 @@
                     });
                     
                     updateConnectionStatus(true);
-                    renderProducts(document.getElementById('searchInputDesktop').value);
+                    const searchValue = document.getElementById('searchInputDesktop').value || document.getElementById('searchInputMobile').value || "";
+                    filterProducts(searchValue);
                 }, (error) => {
-                    console.warn("Live Data Error:", error.message);
                     updateConnectionStatus(false);
-                    // Show error state instead of local storage
                     document.getElementById('productGrid').innerHTML = "";
-                    document.getElementById('errorState').classList.remove('hidden');
-                    document.getElementById('loadingState').classList.add('hidden');
+                    document.getElementById('loadingState').classList.remove('hidden'); 
                 });
             });
 
         } catch (err) {
-            console.error("Critical Firebase Error:", err);
             updateConnectionStatus(false);
         }
 
         function updateConnectionStatus(isLive) {
-            document.getElementById('loadingState').classList.add('hidden');
+            if (isLive) document.getElementById('loadingState').classList.add('hidden');
             const liveStatusEl = document.getElementById('liveStatus');
             const statusDot = document.getElementById('statusDot');
             const statusText = document.getElementById('statusText');
@@ -415,13 +504,40 @@
             } else {
                 statusDot.className = "w-2 h-2 rounded-full bg-red-500";
                 liveStatusEl.className = "flex items-center gap-1 bg-red-500/10 px-2 py-1 rounded-full border border-red-500/20";
-                statusText.innerText = "OFFLINE (Permission)";
+                statusText.innerText = "OFFLINE";
                 statusText.className = "text-[10px] text-red-400 font-bold";
             }
         }
 
-        // --- APP LOGIC ---
-        const CATEGORIES = ["Home Appliances","Computer & Office","Home Improvement","Home & Garden","Sports & Entertainment","Office & School Supplies","Toys & Hobbies","Security & Protection","Automobiles, Parts & Accessories","Jewelry & Accessories","Lights & Lighting","Consumer Electronics","Beauty & Health","Weddings & Events","Shoes","Electronic Components & Supplies","Phones & Telecommunications","Tools","Mother & Kids","Furniture","Watches","Luggage & Bags","Underwear","Virtual Products","Industrial & Business","Sports Shoes,Clothing&Accessories","Phones & Telecommunications Accessories","Women's Clothing","Men's Clothing","Apparel Accessories","Hair Extensions & Wigs","Special Category","Books & Cultural Merchandise","Novelty & Special Use","Motorcycle Equipments & Parts"];
+        // --- DATA & CONFIG ---
+        const CATEGORY_MAP = {
+            "Home Appliances": "fa-blender",
+            "Computer & Office": "fa-laptop",
+            "Home Improvement": "fa-paint-roller",
+            "Home & Garden": "fa-couch",
+            "Sports & Entertainment": "fa-basketball",
+            "Office & School Supplies": "fa-pen-ruler",
+            "Toys & Hobbies": "fa-gamepad",
+            "Security & Protection": "fa-shield-halved",
+            "Automobiles, Parts & Accessories": "fa-car",
+            "Jewelry & Accessories": "fa-gem",
+            "Lights & Lighting": "fa-lightbulb",
+            "Consumer Electronics": "fa-headphones",
+            "Beauty & Health": "fa-pump-soap",
+            "Weddings & Events": "fa-champagne-glasses",
+            "Shoes": "fa-shoe-prints",
+            "Phones & Telecommunications": "fa-mobile-screen",
+            "Tools": "fa-screwdriver-wrench",
+            "Mother & Kids": "fa-baby",
+            "Furniture": "fa-chair",
+            "Watches": "fa-clock",
+            "Luggage & Bags": "fa-suitcase",
+            "Underwear": "fa-shirt",
+            "Virtual Products": "fa-cloud",
+            "Men's Clothing": "fa-person",
+            "Women's Clothing": "fa-person-dress"
+        };
+        const CATEGORIES = Object.keys(CATEGORY_MAP);
         
         let currentCategory = "All";
         const ADMIN_EMAIL = "Haideroffical16@gmail.com";
@@ -439,63 +555,76 @@
             trackVisit(); 
         };
 
-        // --- VISITOR TRACKING LOGIC ---
+        // --- SIDEBAR TOGGLE LOGIC ---
+        window.toggleSidebar = function() {
+            const sidebar = document.getElementById('mainSidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            
+            // Check if open by checking transform class
+            const isClosed = sidebar.classList.contains('-translate-x-full');
+            
+            if (isClosed) {
+                // Open
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                // Small delay to allow display block to apply before opacity transition
+                setTimeout(() => {
+                    overlay.classList.remove('opacity-0');
+                }, 10);
+            } else {
+                // Close
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                }, 300); // Match transition duration
+            }
+        }
+
+        // --- TRACKING ---
         async function trackVisit() {
             if (sessionStorage.getItem('visited_today')) return;
             sessionStorage.setItem('visited_today', 'true');
             const today = new Date().toISOString().split('T')[0];
-
-            if (isUsingFirebase) {
-                try {
-                    const statsRef = doc(db, 'artifacts', appId, 'public', 'data', 'stats', today);
-                    const docSnap = await getDoc(statsRef);
-                    if (docSnap.exists()) {
-                        await setDoc(statsRef, { count: docSnap.data().count + 1 }, { merge: true });
-                    } else {
-                        await setDoc(statsRef, { count: 1 });
-                    }
-                } catch (e) {
-                    console.warn("Stats Write Error (Likely Permission):", e.code);
-                }
-            }
+            try {
+                const statsRef = doc(db, 'artifacts', appId, 'public', 'data', 'stats', today);
+                const docSnap = await getDoc(statsRef);
+                if (docSnap.exists()) await setDoc(statsRef, { count: docSnap.data().count + 1 }, { merge: true });
+                else await setDoc(statsRef, { count: 1 });
+            } catch (e) {}
         }
 
         async function loadStats() {
             let todayCount = 0, monthCount = 0, totalCount = 0;
             const today = new Date().toISOString().split('T')[0];
             const currentMonth = today.substring(0, 7);
-
-            if (isUsingFirebase) {
-                try {
-                    const statsCol = collection(db, 'artifacts', appId, 'public', 'data', 'stats');
-                    const snapshot = await getDocs(statsCol);
-                    snapshot.forEach(doc => {
-                        const date = doc.id;
-                        const count = doc.data().count || 0;
-                        totalCount += count;
-                        if (date === today) todayCount = count;
-                        if (date.startsWith(currentMonth)) monthCount += count;
-                    });
-                    
-                    document.getElementById('statToday').innerText = todayCount;
-                    document.getElementById('statMonth').innerText = monthCount;
-                    document.getElementById('statTotal').innerText = totalCount;
-                } catch (e) { 
-                    console.warn("Stats Read Error:", e);
-                }
-            }
+            try {
+                const snapshot = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'stats'));
+                snapshot.forEach(doc => {
+                    const cnt = doc.data().count || 0;
+                    totalCount += cnt;
+                    if (doc.id === today) todayCount = cnt;
+                    if (doc.id.startsWith(currentMonth)) monthCount += cnt;
+                });
+                document.getElementById('statToday').innerText = todayCount;
+                document.getElementById('statMonth').innerText = monthCount;
+                document.getElementById('statTotal').innerText = totalCount;
+            } catch (e) {}
         }
 
-        // --- Renders ---
+        // --- RENDER CATEGORIES (Unified Sidebar) ---
         function renderCategories() {
-            const list = document.getElementById('categoriesList');
-            let html = `<button onclick="filterByCategory('All')" id="cat-All" class="selected-pill bg-white/10 text-white px-5 py-2 rounded-full text-xs font-medium border border-white/10 hover:bg-white/20 transition">All Categories</button>`;
+            const listSidebar = document.getElementById('categoriesSidebar');
+            let htmlSidebar = `<div onclick="filterByCategory('All'); if(window.innerWidth < 1024) toggleSidebar()" id="cat-sidebar-All" class="sidebar-item active cursor-pointer p-3 rounded-lg flex items-center gap-3 text-sm text-gray-300 hover:bg-white/5"><i class="fa-solid fa-layer-group w-5 text-center"></i> All Products</div>`;
+
             CATEGORIES.forEach(cat => {
                 const id = cat.replace(/[^a-zA-Z0-9]/g, '');
-                const safeCat = cat.replace(/'/g, "\\'");
-                html += `<button onclick="filterByCategory('${safeCat}')" id="cat-${id}" class="bg-black/50 text-gray-400 px-5 py-2 rounded-full text-xs font-medium border border-white/5 hover:text-white hover:border-white/20 transition">${cat}</button>`;
+                const icon = CATEGORY_MAP[cat] || "fa-tag";
+                
+                htmlSidebar += `<div onclick="filterByCategory('${cat.replace(/'/g, "\\'")}'); if(window.innerWidth < 1024) toggleSidebar()" id="cat-sidebar-${id}" class="sidebar-item cursor-pointer p-3 rounded-lg flex items-center gap-3 text-sm text-gray-400 hover:text-white hover:bg-white/5"><i class="fa-solid ${icon} w-5 text-center"></i> ${cat}</div>`;
             });
-            list.innerHTML = html;
+
+            listSidebar.innerHTML = htmlSidebar;
         }
 
         function populateAdminCategories() {
@@ -506,18 +635,50 @@
 
         window.filterByCategory = function(cat) {
             currentCategory = cat;
-            document.querySelectorAll('#categoriesList button').forEach(b => {
-                b.classList.remove('selected-pill', 'text-black');
-                b.classList.add('text-gray-400', 'bg-black/50');
+            
+            // Update Sidebar styles
+            document.querySelectorAll('.sidebar-item').forEach(b => {
+                b.classList.remove('active', 'text-[#bf953f]');
+                b.classList.add('text-gray-400');
             });
+
             const safeId = cat === 'All' ? 'All' : cat.replace(/[^a-zA-Z0-9]/g, '');
-            const btn = document.getElementById(`cat-${safeId}`);
-            if(btn) { btn.classList.add('selected-pill'); btn.classList.remove('text-gray-400', 'bg-black/50'); }
+            
+            // Highlight Sidebar
+            const btnSidebar = document.getElementById(`cat-sidebar-${safeId}`);
+            if(btnSidebar) { btnSidebar.classList.add('active'); btnSidebar.classList.remove('text-gray-400'); }
+
             document.getElementById('currentCategoryTitle').innerText = cat === 'All' ? 'All Products' : cat;
-            renderProducts(document.getElementById('searchInputDesktop').value);
+            
+            document.getElementById('searchInputDesktop').value = "";
+            document.getElementById('searchInputMobile').value = "";
+            filterProducts("");
         }
 
-        window.renderProducts = function(filterText = "") {
+        window.handleSearch = function(val) {
+            if (document.getElementById('searchInputDesktop').value !== val) document.getElementById('searchInputDesktop').value = val;
+            if (document.getElementById('searchInputMobile').value !== val) document.getElementById('searchInputMobile').value = val;
+            
+            if(val.length > 0 && currentCategory !== 'All') {
+                filterByCategory('All'); // Switch to all visualy
+                document.getElementById('currentCategoryTitle').innerText = 'Search Results';
+            }
+            filterProducts(val);
+        }
+
+        window.handleSearchEnter = function(e) {
+            if (e.key === 'Enter' || e.keyCode === 13) {
+                e.preventDefault();
+                e.target.blur();
+                const container = document.getElementById('gridContainer'); 
+                if(container) {
+                    const y = container.getBoundingClientRect().top + window.pageYOffset - 100;
+                    window.scrollTo({top: y, behavior: 'smooth'});
+                }
+            }
+        }
+
+        window.filterProducts = function(filterText = "") {
             const grid = document.getElementById('productGrid');
             const emptyState = document.getElementById('emptyState');
             if(!grid) return;
@@ -531,13 +692,10 @@
                 return terms.every(term => text.includes(term));
             });
 
-            if (currentCategory !== "All") {
-                filtered = filtered.filter(p => p.category === currentCategory);
-            }
+            if (currentCategory !== "All") filtered = filtered.filter(p => p.category === currentCategory);
 
             if (filtered.length === 0) {
                 emptyState.classList.remove('hidden');
-                document.getElementById('errorState').classList.add('hidden'); // Hide error if no products but connection ok
             } else {
                 emptyState.classList.add('hidden');
                 filtered.forEach(product => {
@@ -545,20 +703,27 @@
                     
                     const mainImage = (product.media && product.media.length > 0 && product.media[0].type === 'image') ? product.media[0].src : 'https://placehold.co/400x500/111/gold?text=No+Image';
                     
+                    // Discount Logic
+                    let discountBadge = '';
+                    if(product.manualDiscount) {
+                        discountBadge = `<span class="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg z-20">-${product.manualDiscount}% OFF</span>`;
+                    }
+
                     const card = `
-                        <div class="glass-card rounded-2xl overflow-hidden relative group cursor-pointer gold-glow transition-all duration-300">
-                            <div onclick="openViewModal('${product.id}')">
-                                <div class="relative aspect-[4/5] bg-[#0a0a0a] overflow-hidden p-6 flex items-center justify-center">
-                                    <img src="${mainImage}" class="w-full h-full object-contain opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-transform duration-500">
-                                    <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
-                                        <span class="bg-white/10 backdrop-blur text-white px-4 py-2 rounded-full text-xs font-medium border border-white/20">View Details</span>
-                                    </div>
+                        <div class="glass-card rounded-xl overflow-hidden relative group cursor-pointer gold-glow transition-all duration-300 transform active:scale-[0.98] md:active:scale-100 flex flex-col h-full">
+                            ${discountBadge}
+                            <div onclick="openViewModal('${product.id}')" class="flex-1 flex flex-col">
+                                <div class="relative aspect-square bg-[#0a0a0a] overflow-hidden p-4 flex items-center justify-center">
+                                    <img src="${mainImage}" class="w-full h-full object-contain opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-transform duration-500">
                                 </div>
-                                <div class="p-4 bg-gradient-to-b from-[#151515] to-[#0f0f0f]">
-                                    <div class="text-[10px] text-gray-500 uppercase tracking-wide mb-1 truncate">${product.category || 'General'}</div>
-                                    <h3 class="text-gray-300 font-light text-xs md:text-sm line-clamp-1 mb-1">${product.title}</h3>
-                                    <div class="flex items-center justify-between">
-                                        <p class="text-gold-gradient font-bold text-sm md:text-lg">$${parseFloat(product.price).toLocaleString()}</p>
+                                <div class="p-3 bg-gradient-to-b from-[#151515] to-[#0f0f0f] flex-1 flex flex-col">
+                                    <h3 class="text-gray-200 font-medium text-xs md:text-sm line-clamp-2 mb-2 leading-snug">${product.title}</h3>
+                                    <div class="mt-auto">
+                                        <div class="flex items-baseline gap-2">
+                                            <span class="text-white font-bold text-base md:text-lg">USD ${parseFloat(product.price).toLocaleString()}</span>
+                                            ${product.manualDiscount ? `<span class="text-[10px] text-gray-500 line-through">-${product.manualDiscount}%</span>` : ''}
+                                        </div>
+                                        <div class="text-[10px] text-gray-500 mt-1">${product.category}</div>
                                     </div>
                                 </div>
                             </div>
@@ -570,12 +735,12 @@
             }
         }
 
-        // --- Data Handling ---
+        // --- FILE HANDLING ---
         window.handleMultiFiles = function(input, type) {
             const files = Array.from(input.files);
             if(files.length === 0) return;
             files.forEach(file => {
-                if(file.size > 800 * 1024) { alert(`File ${file.name} too large. Use compressed images.`); return; }
+                if(file.size > 800 * 1024) { alert(`File ${file.name} too large.`); return; }
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     tempMedia.push({ type: type, src: e.target.result });
@@ -591,16 +756,13 @@
             tempMedia.forEach((item, index) => {
                 const div = document.createElement('div');
                 div.className = "w-16 h-16 rounded border border-white/20 relative overflow-hidden group";
-                let content = item.type === 'image' ? `<img src="${item.src}" class="w-full h-full object-cover">` : `<video src="${item.src}" class="w-full h-full object-cover"></video><i class="fa-solid fa-play absolute inset-0 m-auto text-white drop-shadow-md"></i>`;
+                let content = item.type === 'image' ? `<img src="${item.src}" class="w-full h-full object-cover">` : `<video src="${item.src}" class="w-full h-full object-cover"></video>`;
                 div.innerHTML = `${content}<button type="button" onclick="removeMedia(${index})" class="absolute top-0 right-0 bg-red-600 text-white w-4 h-4 text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-times"></i></button>`;
                 container.appendChild(div);
             });
         }
 
-        window.removeMedia = function(index) {
-            tempMedia.splice(index, 1);
-            renderMediaPreview();
-        }
+        window.removeMedia = function(index) { tempMedia.splice(index, 1); renderMediaPreview(); }
 
         window.handleFormSubmit = async function(e) {
             e.preventDefault();
@@ -616,6 +778,7 @@
                 category: document.getElementById('pCategory').value,
                 price: document.getElementById('pPrice').value,
                 oldPrice: document.getElementById('pOldPrice').value,
+                manualDiscount: document.getElementById('pDiscount').value, // Manual Discount
                 link: document.getElementById('pLink').value,
                 description: document.getElementById('pDesc').value,
                 sizes: sizeStr ? sizeStr.split(',').map(s=>s.trim()).filter(s=>s) : [],
@@ -629,33 +792,48 @@
                 e.target.reset();
                 tempMedia = [];
                 renderMediaPreview();
-            } catch (err) {
-                alert("Upload failed: Permission Denied by Database Rules.");
-            } finally {
+            } catch (err) { alert("Upload failed."); } 
+            finally {
                 btn.innerHTML = `<i class="fa-solid fa-paper-plane mr-2"></i> Publish Product`;
                 btn.disabled = false;
             }
         }
 
         window.deleteProduct = async function(id) {
-            if(!confirm("Delete item?")) return;
-            try {
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', id));
-            } catch(e) { alert("Delete failed: Permission Denied."); }
+            if(!confirm("Delete?")) return;
+            try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', id)); } catch(e) {}
         }
 
-        // --- Modals & Sliders ---
+        // --- NEW VIEW MODAL LOGIC (AliExpress Style) ---
         window.openViewModal = function(id) {
             const product = products.find(p => p.id === id);
             if(!product) return;
 
             document.getElementById('mTitle').innerText = product.title;
             document.getElementById('mCategoryBadge').innerText = product.category || 'General';
-            document.getElementById('mPrice').innerText = "$" + parseFloat(product.price).toLocaleString();
-            document.getElementById('mOldPrice').innerText = "$" + parseFloat(product.oldPrice).toLocaleString();
+            document.getElementById('mPrice').innerText = parseFloat(product.price).toLocaleString();
             document.getElementById('mDesc').innerText = product.description;
             document.getElementById('mLink').href = product.link;
 
+            // Price & Discount Logic
+            const oldPriceEl = document.getElementById('mOldPriceContainer');
+            const discountBadge = document.getElementById('mDiscountBadge');
+            
+            if(product.oldPrice) {
+                oldPriceEl.innerHTML = `USD ${parseFloat(product.oldPrice).toLocaleString()}`;
+                oldPriceEl.classList.remove('hidden');
+            } else {
+                oldPriceEl.classList.add('hidden');
+            }
+
+            if(product.manualDiscount) {
+                discountBadge.innerText = `-${product.manualDiscount}% OFF`;
+                discountBadge.classList.remove('hidden');
+            } else {
+                discountBadge.classList.add('hidden');
+            }
+
+            // Sizes
             const sContainer = document.getElementById('mSizesContainer');
             const sList = document.getElementById('mSizesList');
             sList.innerHTML = '';
@@ -664,27 +842,45 @@
                 product.sizes.forEach(s => sList.innerHTML += `<button class="size-btn w-10 h-10 rounded border border-white/20 text-gray-400 hover:border-yellow-500 hover:text-white transition">${s}</button>`);
             } else { sContainer.classList.add('hidden'); }
 
+            // Media & Thumbnails
             currentProductMedia = product.media || [{type:'image', src: product.image}];
             currentSlideIndex = 0;
-            renderSlider();
+            renderGallery(); // New function for side-by-side gallery
             document.getElementById('viewModal').classList.remove('hidden');
         }
 
-        window.renderSlider = function() {
+        window.renderGallery = function() {
             const display = document.getElementById('sliderDisplay');
-            const dots = document.getElementById('sliderDots');
+            const thumbsContainer = document.getElementById('sliderThumbs');
             const media = currentProductMedia[currentSlideIndex];
             
+            // Render Main
             if(media.type === 'image') display.innerHTML = `<img src="${media.src}" class="max-h-full max-w-full object-contain drop-shadow-2xl modal-animate">`;
             else display.innerHTML = `<video controls autoplay class="max-h-full max-w-full object-contain drop-shadow-2xl modal-animate"><source src="${media.src}"></video>`;
 
+            // Render Thumbs
             if(currentProductMedia.length > 1) {
-                let dotsHtml = '';
-                currentProductMedia.forEach((_, idx) => {
-                    dotsHtml += `<div class="${idx === currentSlideIndex ? 'bg-yellow-500 w-6' : 'bg-gray-600 w-2'} h-1 rounded-full transition-all duration-300"></div>`;
+                let thumbsHtml = '';
+                currentProductMedia.forEach((m, idx) => {
+                    const activeClass = idx === currentSlideIndex ? 'active' : 'opacity-50 hover:opacity-80';
+                    const content = m.type === 'image' ? `<img src="${m.src}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-gray-800 flex items-center justify-center"><i class="fa-solid fa-play text-xs"></i></div>`;
+                    thumbsHtml += `
+                        <div onclick="setSlide(${idx})" class="thumb-img w-14 h-14 lg:w-16 lg:h-16 rounded border border-white/10 cursor-pointer transition-all ${activeClass} overflow-hidden">
+                            ${content}
+                        </div>
+                    `;
                 });
-                dots.innerHTML = dotsHtml;
-            } else { dots.innerHTML = ''; }
+                thumbsContainer.innerHTML = thumbsHtml;
+                thumbsContainer.classList.remove('hidden');
+            } else {
+                thumbsContainer.innerHTML = '';
+                thumbsContainer.classList.add('hidden');
+            }
+        }
+
+        window.setSlide = function(index) {
+            currentSlideIndex = index;
+            renderGallery();
         }
 
         window.changeSlide = function(dir) {
@@ -692,10 +888,10 @@
             currentSlideIndex += dir;
             if(currentSlideIndex < 0) currentSlideIndex = currentProductMedia.length - 1;
             if(currentSlideIndex >= currentProductMedia.length) currentSlideIndex = 0;
-            renderSlider();
+            renderGallery();
         }
 
-        // --- Auth & Utils ---
+        // --- AUTH ---
         window.handleLogin = function(e){
             e.preventDefault();
             const email = document.getElementById('loginEmail').value.trim().toLowerCase();
@@ -745,7 +941,8 @@
                     if(statusIndicator) statusIndicator.classList.add('hidden'); 
                 }
             }
-            renderProducts(document.getElementById('searchInputDesktop').value);
+            const val = document.getElementById('searchInputDesktop').value || document.getElementById('searchInputMobile').value;
+            if(val) handleSearch(val); else filterProducts("");
         }
 
         window.handleProfileClick = function() { if(!currentUser) openLoginModal(); else if(currentUser.isAdmin) openAddModal(); else alert("Logged in: "+currentUser.name); }
@@ -753,11 +950,7 @@
         window.closeLoginModal = () => document.getElementById('loginModal').classList.add('hidden');
         window.openSignupModal = () => document.getElementById('signupModal').classList.remove('hidden');
         window.closeSignupModal = () => document.getElementById('signupModal').classList.add('hidden');
-        window.openAddModal = () => { 
-            document.getElementById('addModal').classList.remove('hidden'); 
-            tempMedia = []; renderMediaPreview();
-            loadStats(); 
-        };
+        window.openAddModal = () => { document.getElementById('addModal').classList.remove('hidden'); tempMedia = []; renderMediaPreview(); loadStats(); };
         window.closeAddModal = () => document.getElementById('addModal').classList.add('hidden');
         window.closeViewModal = () => document.getElementById('viewModal').classList.add('hidden');
         window.onclick = (e) => ["viewModal","addModal","loginModal","signupModal"].forEach(id=>{ if(e.target.id===id) document.getElementById(id).classList.add('hidden'); });
