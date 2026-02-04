@@ -289,17 +289,17 @@
         </div>
     </div>
 
-    <!-- ADD PRODUCT MODAL (Admin) -->
+    <!-- ADD/EDIT PRODUCT MODAL (Admin) -->
     <div id="addModal" class="fixed inset-0 z-[60] hidden bg-black/95 backdrop-blur-md flex items-center justify-center p-0 md:p-4">
         <div class="bg-[#111] w-full h-full md:h-auto md:max-w-lg md:rounded-2xl border-0 md:border border-white/10 flex flex-col max-h-[100vh] md:max-h-[90vh] modal-animate shadow-2xl">
             <div class="flex justify-between items-center p-6 border-b border-white/5 bg-[#111] md:rounded-t-2xl z-10">
-                <h2 class="text-xl font-bold text-white"><span class="text-gold-gradient">Admin</span> Dashboard</h2>
+                <h2 class="text-xl font-bold text-white"><span class="text-gold-gradient" id="modalTitle">Admin Dashboard</span></h2>
                 <button onclick="closeAddModal()" class="text-gray-500 hover:text-white p-2"><i class="fa-solid fa-times text-lg"></i></button>
             </div>
             
             <div class="overflow-y-auto p-6 custom-scrollbar flex-1 pb-24 md:pb-6">
-                <!-- STATS -->
-                <div class="grid grid-cols-3 gap-3 mb-6">
+                <!-- STATS (Only visible when adding, not editing, for simplicity) -->
+                <div id="adminStats" class="grid grid-cols-3 gap-3 mb-6">
                     <div class="bg-gray-900/50 border border-white/10 rounded-xl p-3 text-center">
                         <p class="text-[10px] text-gray-400 uppercase tracking-widest">Today</p>
                         <p id="statToday" class="text-xl font-bold text-white mt-1">0</p>
@@ -315,6 +315,9 @@
                 </div>
 
                 <form id="addProductForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
+                    <!-- Hidden field for Edit Mode -->
+                    <input type="hidden" id="editProductId">
+
                     <div class="input-group relative mt-1">
                         <select id="pCategory" required class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer appearance-none"></select>
                         <label class="absolute left-4 top-3.5 text-gray-500 text-sm px-1 pointer-events-none">Category</label>
@@ -325,22 +328,32 @@
                         <div class="input-group relative"><input type="number" step="0.01" id="pPrice" required class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm px-1 pointer-events-none">Price (USD)</label></div>
                         <div class="input-group relative"><input type="number" step="0.01" id="pOldPrice" class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm px-1 pointer-events-none">Old Price</label></div>
                     </div>
-                    <!-- MANUAL DISCOUNT INPUT -->
-                    <div class="input-group relative"><input type="number" id="pDiscount" class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm px-1 pointer-events-none">Discount % (e.g. 50)</label></div>
+                    <!-- MANUAL DISCOUNT & OFFER DURATION -->
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="input-group relative"><input type="number" id="pDiscount" class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm px-1 pointer-events-none">Discount % (e.g. 50)</label></div>
+                        <div class="input-group relative"><input type="text" id="pOfferText" class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm px-1 pointer-events-none">Offer (e.g. Ends in 2 Days)</label></div>
+                    </div>
                     
                     <div class="input-group relative"><input type="text" id="pSizes" class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm px-1 pointer-events-none">Sizes (S, M, L)</label></div>
+                    
+                    <!-- MEDIA UPLOAD -->
                     <div class="border-2 border-dashed border-white/10 rounded-xl p-4 text-center hover:border-yellow-500/50 transition">
                         <p class="text-sm text-gray-400 mb-2">Upload Photos & Videos</p>
                         <div class="flex gap-2 justify-center mb-2">
                             <label class="cursor-pointer bg-gray-800 px-3 py-1 rounded text-xs hover:bg-gray-700"><i class="fa-solid fa-image mr-1"></i> Photos
                                 <input type="file" id="multiImageInput" accept="image/*" multiple class="hidden" onchange="handleMultiFiles(this, 'image')">
                             </label>
-                            <label class="cursor-pointer bg-gray-800 px-3 py-1 rounded text-xs hover:bg-gray-700"><i class="fa-solid fa-video mr-1"></i> Videos
+                            <label class="cursor-pointer bg-gray-800 px-3 py-1 rounded text-xs hover:bg-gray-700"><i class="fa-solid fa-video mr-1"></i> Video (Max 1MB)
                                 <input type="file" id="multiVideoInput" accept="video/*" multiple class="hidden" onchange="handleMultiFiles(this, 'video')">
                             </label>
                         </div>
+                        <div class="flex gap-2 mt-3">
+                            <input type="text" id="mediaUrlInput" class="flex-1 bg-[#1a1a1a] border border-white/10 rounded px-3 py-2 text-xs text-white" placeholder="Or paste Image/Video URL here...">
+                            <button type="button" onclick="addMediaUrl()" class="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded text-xs">Add</button>
+                        </div>
                         <div id="mediaPreviewList" class="flex flex-wrap gap-2 mt-2 justify-center empty:hidden"></div>
                     </div>
+
                     <div class="input-group relative"><input type="url" id="pLink" required class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" "><label class="absolute left-4 top-3.5 text-gray-500 text-sm px-1 pointer-events-none">Affiliate Link</label></div>
                     <div class="input-group relative"><textarea id="pDesc" rows="4" class="w-full bg-[#1a1a1a] border border-white/10 rounded-lg px-4 py-3 text-sm focus:border-yellow-500 outline-none text-white peer" placeholder=" "></textarea><label class="absolute left-4 top-3.5 text-gray-500 text-sm px-1 pointer-events-none">Description</label></div>
                 </form>
@@ -386,7 +399,12 @@
 
                     <!-- Price Section -->
                     <div class="bg-white/5 rounded-xl p-4 mb-6 border border-white/5">
-                        <div class="text-pink-500 text-xs font-bold uppercase mb-1">SuperDeals</div>
+                        <div class="flex justify-between items-start mb-1">
+                            <div class="text-pink-500 text-xs font-bold uppercase">SuperDeals</div>
+                            <!-- Offer Expiry (Dynamic) -->
+                            <div id="mOfferText" class="text-yellow-400 text-xs font-bold border border-yellow-500/50 px-2 py-0.5 rounded hidden"></div>
+                        </div>
+                        
                         <div class="flex items-baseline gap-3 flex-wrap">
                             <span class="text-3xl font-bold text-white">USD <span id="mPrice" class="text-4xl"></span></span>
                             <span id="mOldPriceContainer" class="hidden text-gray-500 line-through text-lg"></span>
@@ -405,7 +423,6 @@
                         <a id="mLink" href="#" target="_blank" class="w-full btn-gold text-black font-bold text-lg py-4 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform shadow-2xl hover:brightness-110">
                             <span>Buy Now</span> <i class="fa-solid fa-cart-shopping"></i>
                         </a>
-                        <!-- Removed Secure Payment Text here -->
                     </div>
                 </div>
             </div>
@@ -421,7 +438,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, deleteDoc, doc, getDoc, getDocs, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, deleteDoc, updateDoc, doc, getDoc, getDocs, setDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         const userFirebaseConfig = {
             apiKey: "AIzaSyCta8jzYrib54xK4SXJ7oLlVp1_LBLRFHg",
@@ -559,25 +576,15 @@
         window.toggleSidebar = function() {
             const sidebar = document.getElementById('mainSidebar');
             const overlay = document.getElementById('mobileOverlay');
-            
-            // Check if open by checking transform class
             const isClosed = sidebar.classList.contains('-translate-x-full');
-            
             if (isClosed) {
-                // Open
                 sidebar.classList.remove('-translate-x-full');
                 overlay.classList.remove('hidden');
-                // Small delay to allow display block to apply before opacity transition
-                setTimeout(() => {
-                    overlay.classList.remove('opacity-0');
-                }, 10);
+                setTimeout(() => { overlay.classList.remove('opacity-0'); }, 10);
             } else {
-                // Close
                 sidebar.classList.add('-translate-x-full');
                 overlay.classList.add('opacity-0');
-                setTimeout(() => {
-                    overlay.classList.add('hidden');
-                }, 300); // Match transition duration
+                setTimeout(() => { overlay.classList.add('hidden'); }, 300);
             }
         }
 
@@ -612,18 +619,15 @@
             } catch (e) {}
         }
 
-        // --- RENDER CATEGORIES (Unified Sidebar) ---
+        // --- RENDER CATEGORIES ---
         function renderCategories() {
             const listSidebar = document.getElementById('categoriesSidebar');
             let htmlSidebar = `<div onclick="filterByCategory('All'); if(window.innerWidth < 1024) toggleSidebar()" id="cat-sidebar-All" class="sidebar-item active cursor-pointer p-3 rounded-lg flex items-center gap-3 text-sm text-gray-300 hover:bg-white/5"><i class="fa-solid fa-layer-group w-5 text-center"></i> All Products</div>`;
-
             CATEGORIES.forEach(cat => {
                 const id = cat.replace(/[^a-zA-Z0-9]/g, '');
                 const icon = CATEGORY_MAP[cat] || "fa-tag";
-                
                 htmlSidebar += `<div onclick="filterByCategory('${cat.replace(/'/g, "\\'")}'); if(window.innerWidth < 1024) toggleSidebar()" id="cat-sidebar-${id}" class="sidebar-item cursor-pointer p-3 rounded-lg flex items-center gap-3 text-sm text-gray-400 hover:text-white hover:bg-white/5"><i class="fa-solid ${icon} w-5 text-center"></i> ${cat}</div>`;
             });
-
             listSidebar.innerHTML = htmlSidebar;
         }
 
@@ -635,21 +639,14 @@
 
         window.filterByCategory = function(cat) {
             currentCategory = cat;
-            
-            // Update Sidebar styles
             document.querySelectorAll('.sidebar-item').forEach(b => {
                 b.classList.remove('active', 'text-[#bf953f]');
                 b.classList.add('text-gray-400');
             });
-
             const safeId = cat === 'All' ? 'All' : cat.replace(/[^a-zA-Z0-9]/g, '');
-            
-            // Highlight Sidebar
             const btnSidebar = document.getElementById(`cat-sidebar-${safeId}`);
             if(btnSidebar) { btnSidebar.classList.add('active'); btnSidebar.classList.remove('text-gray-400'); }
-
             document.getElementById('currentCategoryTitle').innerText = cat === 'All' ? 'All Products' : cat;
-            
             document.getElementById('searchInputDesktop').value = "";
             document.getElementById('searchInputMobile').value = "";
             filterProducts("");
@@ -658,9 +655,8 @@
         window.handleSearch = function(val) {
             if (document.getElementById('searchInputDesktop').value !== val) document.getElementById('searchInputDesktop').value = val;
             if (document.getElementById('searchInputMobile').value !== val) document.getElementById('searchInputMobile').value = val;
-            
             if(val.length > 0 && currentCategory !== 'All') {
-                filterByCategory('All'); // Switch to all visualy
+                filterByCategory('All');
                 document.getElementById('currentCategoryTitle').innerText = 'Search Results';
             }
             filterProducts(val);
@@ -699,35 +695,50 @@
             } else {
                 emptyState.classList.add('hidden');
                 filtered.forEach(product => {
-                    const deleteBtn = (currentUser && currentUser.isAdmin) ? `<button onclick="deleteProduct('${product.id}')" class="absolute top-3 right-3 bg-red-500/90 text-white w-8 h-8 rounded-full shadow-lg z-20 flex items-center justify-center hover:bg-red-600"><i class="fa-solid fa-trash text-xs"></i></button>` : '';
+                    // Edit & Delete Buttons for Admin
+                    let adminBtns = '';
+                    if(currentUser && currentUser.isAdmin) {
+                        adminBtns = `
+                            <div class="absolute top-2 right-2 flex gap-2 z-20">
+                                <button onclick="editProduct('${product.id}')" class="bg-blue-600/90 text-white w-7 h-7 rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700"><i class="fa-solid fa-pen text-[10px]"></i></button>
+                                <button onclick="deleteProduct('${product.id}')" class="bg-red-600/90 text-white w-7 h-7 rounded-full shadow-lg flex items-center justify-center hover:bg-red-700"><i class="fa-solid fa-trash text-[10px]"></i></button>
+                            </div>
+                        `;
+                    }
                     
                     const mainImage = (product.media && product.media.length > 0 && product.media[0].type === 'image') ? product.media[0].src : 'https://placehold.co/400x500/111/gold?text=No+Image';
                     
-                    // Discount Logic
                     let discountBadge = '';
                     if(product.manualDiscount) {
-                        discountBadge = `<span class="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg z-20">-${product.manualDiscount}% OFF</span>`;
+                        discountBadge = `<span class="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg z-20">-${product.manualDiscount}%</span>`;
+                    }
+
+                    // Offer Expiry (Small Label)
+                    let offerLabel = '';
+                    if(product.offerText) {
+                        offerLabel = `<div class="absolute bottom-2 left-2 bg-yellow-500/90 text-black text-[9px] font-bold px-2 py-0.5 rounded shadow z-20 uppercase tracking-wide"><i class="fa-solid fa-clock mr-1"></i>${product.offerText}</div>`;
                     }
 
                     const card = `
                         <div class="glass-card rounded-xl overflow-hidden relative group cursor-pointer gold-glow transition-all duration-300 transform active:scale-[0.98] md:active:scale-100 flex flex-col h-full">
                             ${discountBadge}
-                            <div onclick="openViewModal('${product.id}')" class="flex-1 flex flex-col">
-                                <div class="relative aspect-square bg-[#0a0a0a] overflow-hidden p-4 flex items-center justify-center">
+                            <div class="relative">
+                                ${adminBtns}
+                                ${offerLabel}
+                                <div onclick="openViewModal('${product.id}')" class="relative aspect-square bg-[#0a0a0a] overflow-hidden p-4 flex items-center justify-center">
                                     <img src="${mainImage}" class="w-full h-full object-contain opacity-90 group-hover:opacity-100 group-hover:scale-105 transition-transform duration-500">
                                 </div>
-                                <div class="p-3 bg-gradient-to-b from-[#151515] to-[#0f0f0f] flex-1 flex flex-col">
-                                    <h3 class="text-gray-200 font-medium text-xs md:text-sm line-clamp-2 mb-2 leading-snug">${product.title}</h3>
-                                    <div class="mt-auto">
-                                        <div class="flex items-baseline gap-2">
-                                            <span class="text-white font-bold text-base md:text-lg">USD ${parseFloat(product.price).toLocaleString()}</span>
-                                            ${product.manualDiscount ? `<span class="text-[10px] text-gray-500 line-through">-${product.manualDiscount}%</span>` : ''}
-                                        </div>
-                                        <div class="text-[10px] text-gray-500 mt-1">${product.category}</div>
+                            </div>
+                            <div onclick="openViewModal('${product.id}')" class="p-3 bg-gradient-to-b from-[#151515] to-[#0f0f0f] flex-1 flex flex-col">
+                                <h3 class="text-gray-200 font-medium text-xs md:text-sm line-clamp-2 mb-2 leading-snug">${product.title}</h3>
+                                <div class="mt-auto">
+                                    <div class="flex items-baseline gap-2">
+                                        <span class="text-white font-bold text-base md:text-lg">USD ${parseFloat(product.price).toLocaleString()}</span>
+                                        ${product.manualDiscount ? `<span class="text-[10px] text-gray-500 line-through">-${product.manualDiscount}%</span>` : ''}
                                     </div>
+                                    <div class="text-[10px] text-gray-500 mt-1">${product.category}</div>
                                 </div>
                             </div>
-                            ${deleteBtn}
                         </div>
                     `;
                     grid.innerHTML += card;
@@ -735,25 +746,66 @@
             }
         }
 
-        // --- FILE HANDLING ---
-        window.handleMultiFiles = function(input, type) {
+        // --- FILE HANDLING & COMPRESSION ---
+        const compressImage = (file) => {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        const MAX_WIDTH = 800; 
+                        const MAX_HEIGHT = 800;
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > height) { if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; } } 
+                        else { if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; } }
+                        canvas.width = width;
+                        canvas.height = height;
+                        ctx.drawImage(img, 0, 0, width, height);
+                        resolve(canvas.toDataURL('image/jpeg', 0.6));
+                    };
+                };
+            });
+        };
+
+        window.handleMultiFiles = async function(input, type) {
             const files = Array.from(input.files);
             if(files.length === 0) return;
-            files.forEach(file => {
-                // Limits: 10MB for images, 50MB for videos
-                const limit = type === 'image' ? 10 * 1024 * 1024 : 50 * 1024 * 1024;
-                if(file.size > limit) { 
-                    alert(`File ${file.name} too large. Max ${type === 'image' ? '10MB' : '50MB'}.`); 
-                    return; 
+            for (const file of files) {
+                if (type === 'image') {
+                    try {
+                        const compressedDataUrl = await compressImage(file);
+                        tempMedia.push({ type: 'image', src: compressedDataUrl });
+                        renderMediaPreview();
+                    } catch (e) { console.error("Compression failed", e); }
+                } else if (type === 'video') {
+                    if (file.size > 1 * 1024 * 1024) { 
+                        alert(`Video ${file.name} is too large (>1MB). Please use a URL instead.`); 
+                        continue; 
+                    }
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        tempMedia.push({ type: 'video', src: e.target.result });
+                        renderMediaPreview();
+                    };
+                    reader.readAsDataURL(file);
                 }
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    tempMedia.push({ type: type, src: e.target.result });
-                    renderMediaPreview();
-                };
-                reader.readAsDataURL(file);
-            });
+            }
+            input.value = '';
+        }
+
+        window.addMediaUrl = function() {
+            const url = document.getElementById('mediaUrlInput').value.trim();
+            if (!url) return;
+            const isVideo = url.match(/\.(mp4|webm|ogg)$/i);
+            const type = isVideo ? 'video' : 'image';
+            tempMedia.push({ type: type, src: url });
+            renderMediaPreview();
+            document.getElementById('mediaUrlInput').value = '';
         }
 
         window.renderMediaPreview = function() {
@@ -770,37 +822,89 @@
 
         window.removeMedia = function(index) { tempMedia.splice(index, 1); renderMediaPreview(); }
 
+        // --- EDIT PRODUCT LOGIC ---
+        window.editProduct = function(id) {
+            const product = products.find(p => p.id === id);
+            if(!product) return;
+
+            document.getElementById('editProductId').value = product.id;
+            document.getElementById('modalTitle').innerText = "Edit Product";
+            document.getElementById('publishBtn').innerHTML = `<i class="fa-solid fa-save mr-2"></i> Update Product`;
+            document.getElementById('adminStats').classList.add('hidden'); // Hide stats in Edit mode
+
+            document.getElementById('pTitle').value = product.title;
+            document.getElementById('pCategory').value = product.category;
+            document.getElementById('pPrice').value = product.price;
+            document.getElementById('pOldPrice').value = product.oldPrice || '';
+            document.getElementById('pDiscount').value = product.manualDiscount || '';
+            document.getElementById('pOfferText').value = product.offerText || '';
+            document.getElementById('pLink').value = product.link;
+            document.getElementById('pDesc').value = product.description;
+            document.getElementById('pSizes').value = product.sizes ? product.sizes.join(',') : '';
+
+            tempMedia = product.media || [];
+            renderMediaPreview();
+            
+            document.getElementById('addModal').classList.remove('hidden');
+        }
+
+        window.openAddModal = () => { 
+            document.getElementById('addModal').classList.remove('hidden'); 
+            // Reset for Add Mode
+            document.getElementById('editProductId').value = '';
+            document.getElementById('addProductForm').reset();
+            document.getElementById('modalTitle').innerText = "Admin Dashboard";
+            document.getElementById('publishBtn').innerHTML = `<i class="fa-solid fa-paper-plane mr-2"></i> Publish Product`;
+            document.getElementById('adminStats').classList.remove('hidden');
+            tempMedia = []; 
+            renderMediaPreview(); 
+            loadStats(); 
+        };
+
         window.handleFormSubmit = async function(e) {
             e.preventDefault();
             const btn = document.getElementById('publishBtn');
-            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Uploading...`;
+            const originalBtnText = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Saving...`;
             btn.disabled = true;
 
             if(tempMedia.length === 0) tempMedia.push({type: 'image', src: 'https://placehold.co/400x500/111/gold?text=No+Image'});
 
             const sizeStr = document.getElementById('pSizes').value.trim();
+            const editId = document.getElementById('editProductId').value;
+
             const productData = {
                 title: document.getElementById('pTitle').value,
                 category: document.getElementById('pCategory').value,
                 price: document.getElementById('pPrice').value,
                 oldPrice: document.getElementById('pOldPrice').value,
-                manualDiscount: document.getElementById('pDiscount').value, // Manual Discount
+                manualDiscount: document.getElementById('pDiscount').value,
+                offerText: document.getElementById('pOfferText').value,
                 link: document.getElementById('pLink').value,
                 description: document.getElementById('pDesc').value,
                 sizes: sizeStr ? sizeStr.split(',').map(s=>s.trim()).filter(s=>s) : [],
                 media: tempMedia,
-                createdAt: serverTimestamp ? serverTimestamp() : new Date().toISOString()
+                updatedAt: serverTimestamp ? serverTimestamp() : new Date().toISOString()
             };
 
             try {
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), productData);
+                if (editId) {
+                    // Update existing
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', editId), productData);
+                } else {
+                    // Create new
+                    productData.createdAt = serverTimestamp ? serverTimestamp() : new Date().toISOString();
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'products'), productData);
+                }
                 closeAddModal();
                 e.target.reset();
                 tempMedia = [];
                 renderMediaPreview();
-            } catch (err) { alert("Upload failed."); } 
+            } catch (err) { 
+                alert("Upload failed. If uploading images/videos, ensure they are within size limits (1MB for DB doc limit)."); 
+            } 
             finally {
-                btn.innerHTML = `<i class="fa-solid fa-paper-plane mr-2"></i> Publish Product`;
+                btn.innerHTML = originalBtnText;
                 btn.disabled = false;
             }
         }
@@ -810,7 +914,7 @@
             try { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'products', id)); } catch(e) {}
         }
 
-        // --- NEW VIEW MODAL LOGIC (AliExpress Style) ---
+        // --- NEW VIEW MODAL LOGIC ---
         window.openViewModal = function(id) {
             const product = products.find(p => p.id === id);
             if(!product) return;
@@ -821,25 +925,25 @@
             document.getElementById('mDesc').innerText = product.description;
             document.getElementById('mLink').href = product.link;
 
-            // Price & Discount Logic
             const oldPriceEl = document.getElementById('mOldPriceContainer');
             const discountBadge = document.getElementById('mDiscountBadge');
+            const offerTextEl = document.getElementById('mOfferText');
             
             if(product.oldPrice) {
                 oldPriceEl.innerHTML = `USD ${parseFloat(product.oldPrice).toLocaleString()}`;
                 oldPriceEl.classList.remove('hidden');
-            } else {
-                oldPriceEl.classList.add('hidden');
-            }
+            } else { oldPriceEl.classList.add('hidden'); }
 
             if(product.manualDiscount) {
                 discountBadge.innerText = `-${product.manualDiscount}% OFF`;
                 discountBadge.classList.remove('hidden');
-            } else {
-                discountBadge.classList.add('hidden');
-            }
+            } else { discountBadge.classList.add('hidden'); }
 
-            // Sizes
+            if(product.offerText) {
+                offerTextEl.innerHTML = `<i class="fa-solid fa-clock mr-1"></i>${product.offerText}`;
+                offerTextEl.classList.remove('hidden');
+            } else { offerTextEl.classList.add('hidden'); }
+
             const sContainer = document.getElementById('mSizesContainer');
             const sList = document.getElementById('mSizesList');
             sList.innerHTML = '';
@@ -848,10 +952,9 @@
                 product.sizes.forEach(s => sList.innerHTML += `<button class="size-btn w-10 h-10 rounded border border-white/20 text-gray-400 hover:border-yellow-500 hover:text-white transition">${s}</button>`);
             } else { sContainer.classList.add('hidden'); }
 
-            // Media & Thumbnails
             currentProductMedia = product.media || [{type:'image', src: product.image}];
             currentSlideIndex = 0;
-            renderGallery(); // New function for side-by-side gallery
+            renderGallery();
             document.getElementById('viewModal').classList.remove('hidden');
         }
 
@@ -860,21 +963,15 @@
             const thumbsContainer = document.getElementById('sliderThumbs');
             const media = currentProductMedia[currentSlideIndex];
             
-            // Render Main
             if(media.type === 'image') display.innerHTML = `<img src="${media.src}" class="max-h-full max-w-full object-contain drop-shadow-2xl modal-animate">`;
             else display.innerHTML = `<video controls autoplay class="max-h-full max-w-full object-contain drop-shadow-2xl modal-animate"><source src="${media.src}"></video>`;
 
-            // Render Thumbs
             if(currentProductMedia.length > 1) {
                 let thumbsHtml = '';
                 currentProductMedia.forEach((m, idx) => {
                     const activeClass = idx === currentSlideIndex ? 'active' : 'opacity-50 hover:opacity-80';
                     const content = m.type === 'image' ? `<img src="${m.src}" class="w-full h-full object-cover">` : `<div class="w-full h-full bg-gray-800 flex items-center justify-center"><i class="fa-solid fa-play text-xs"></i></div>`;
-                    thumbsHtml += `
-                        <div onclick="setSlide(${idx})" class="thumb-img w-14 h-14 lg:w-16 lg:h-16 rounded border border-white/10 cursor-pointer transition-all ${activeClass} overflow-hidden">
-                            ${content}
-                        </div>
-                    `;
+                    thumbsHtml += `<div onclick="setSlide(${idx})" class="thumb-img w-14 h-14 lg:w-16 lg:h-16 rounded border border-white/10 cursor-pointer transition-all ${activeClass} overflow-hidden">${content}</div>`;
                 });
                 thumbsContainer.innerHTML = thumbsHtml;
                 thumbsContainer.classList.remove('hidden');
@@ -884,11 +981,7 @@
             }
         }
 
-        window.setSlide = function(index) {
-            currentSlideIndex = index;
-            renderGallery();
-        }
-
+        window.setSlide = function(index) { currentSlideIndex = index; renderGallery(); }
         window.changeSlide = function(dir) {
             if(currentProductMedia.length <= 1) return;
             currentSlideIndex += dir;
@@ -897,7 +990,6 @@
             renderGallery();
         }
 
-        // --- AUTH ---
         window.handleLogin = function(e){
             e.preventDefault();
             const email = document.getElementById('loginEmail').value.trim().toLowerCase();
@@ -956,7 +1048,6 @@
         window.closeLoginModal = () => document.getElementById('loginModal').classList.add('hidden');
         window.openSignupModal = () => document.getElementById('signupModal').classList.remove('hidden');
         window.closeSignupModal = () => document.getElementById('signupModal').classList.add('hidden');
-        window.openAddModal = () => { document.getElementById('addModal').classList.remove('hidden'); tempMedia = []; renderMediaPreview(); loadStats(); };
         window.closeAddModal = () => document.getElementById('addModal').classList.add('hidden');
         window.closeViewModal = () => document.getElementById('viewModal').classList.add('hidden');
         window.onclick = (e) => ["viewModal","addModal","loginModal","signupModal"].forEach(id=>{ if(e.target.id===id) document.getElementById(id).classList.add('hidden'); });
